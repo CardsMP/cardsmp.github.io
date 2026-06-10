@@ -1,0 +1,431 @@
+#game-sidebar {
+	align-items: flex-start;
+	background: rgba(15, 16, 18, 0.7);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	height: 100%;
+	flex-shrink: 0;
+	padding: 0;
+	width: 320px;
+	z-index: 10;
+}
+
+#sidebar-header {
+	align-items: center;
+	border-bottom: 1px solid var(--border);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: row;
+	gap: 8px;
+	padding: 20px;
+	width: 100%;
+}
+
+#game-title {
+	flex: 1;
+}
+
+.game-room-title {
+	color: var(--cyan-bright);
+	font-size: 36px;
+	font-weight: 700;
+	line-height: 44px;
+	margin: 0;
+	display: inline-block;
+	width: fit-content;
+}
+
+#leave-game-btn {
+	background: transparent;
+	border: 1px solid var(--border-strong);
+	border-radius: 6px;
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: 1rem;
+	padding: 4px 8px;
+	transition: all 0.15s;
+	flex-shrink: 0;
+}
+
+#leave-game-btn:hover {
+	background: rgba(217, 79, 79, 0.15);
+	border-color: rgba(217, 79, 79, 0.5);
+	color: #ff4d4d;
+}
+
+#scoreboard-section {
+	align-items: flex-start;
+	border-bottom: 1px solid var(--border);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	height: auto;
+	padding: 20px 16px 16px;
+	width: 100%;
+}
+
+.sidebar-section-title {
+	align-items: flex-start;
+	color: var(--text-primary);
+	display: flex;
+	flex-direction: row;
+	font-size: 16px;
+	font-weight: 600;
+	gap: 8px;
+	line-height: 22px;
+	margin: 0;
+	padding: 0;
+}
+
+#player-list {
+	align-items: flex-start;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 0;
+	width: 100%;
+}
+
+.player-item {
+	align-items: center;
+	border-radius: var(--radius-sm);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: row;
+	gap: 12px;
+	padding: 12px;
+	width: 100%;
+}
+
+.landlord-indicator {
+	align-items: center;
+	background: #391c08;
+	border: 1.5px solid #e2b42b;
+	border-radius: 4px;
+	box-sizing: border-box;
+	color: #e2b42b;
+	display: inline-flex;
+	flex-shrink: 0;
+	font-size: 11px;
+	font-weight: 800;
+	height: 20px;
+	justify-content: center;
+	line-height: 16px;
+	width: 20px;
+}
+
+.player-name > .landlord-indicator,
+.nameplate-name > .landlord-indicator {
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+.landlord-indicator.empty {
+	background: transparent;
+	border-color: transparent;
+	color: transparent;
+}
+
+.status-checkbox {
+	background-color: #3c4fe0;
+	border: none !important;
+	border-radius: 3px;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	font-size: 0;
+	color: transparent;
+	background-image: none;
+}
+
+.player-item:nth-child(1) .status-checkbox {
+	background-color: #3c4fe0;
+}
+
+.player-item:nth-child(2) .status-checkbox {
+	background-color: #e0a84a;
+}
+
+.player-item:nth-child(3) .status-checkbox {
+	background-color: #4caf6e;
+}
+
+.player-item:nth-child(4) .status-checkbox {
+	background-color: #d94f4f;
+}
+
+.status-checkbox.status-ready {
+	background-color: #4caf6e !important;
+}
+
+.status-checkbox.status-not-ready {
+	opacity: 0.4;
+}
+
+.status-checkbox.status-disconnected {
+	background-color: #e0a84a !important;
+}
+
+.player-name {
+	align-items: center;
+	color: var(--text-primary);
+	display: flex;
+	font-size: 14px;
+	font-weight: 600;
+	gap: 0;
+	line-height: 20px;
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.card-count {
+	align-items: center;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	box-sizing: border-box;
+	display: flex !important;
+	font-size: 12px;
+	font-weight: 600;
+	gap: 8px;
+	justify-content: center;
+	line-height: 18px;
+	margin-left: auto;
+	padding: 4px 8px;
+	color: var(--text-primary) !important;
+	min-width: 28px;
+}
+
+.btn-game {
+	align-items: center;
+	background: rgba(255, 255, 255, 0.1);
+	border: none;
+	border-radius: var(--radius-md);
+	box-sizing: border-box;
+	color: #ebedfc;
+	display: flex;
+	flex-direction: row;
+	font-size: 16px;
+	font-weight: 600;
+	gap: 12px;
+	height: 48px;
+	justify-content: center;
+	padding: 8px 24px;
+	width: 100%;
+	cursor: pointer;
+	z-index: 10;
+}
+
+.btn-game:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.18);
+	color: #fff;
+}
+
+.btn-game:disabled {
+	background: rgba(255, 255, 255, 0.06);
+	color: rgba(255, 255, 255, 0.42);
+	cursor: not-allowed;
+}
+
+#ready-btn {
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+#ready-btn.ready {
+	background: rgba(255, 255, 255, 0.18);
+}
+
+#bidding-section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+}
+
+#bidding-info {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-secondary);
+	margin-bottom: 4px;
+}
+
+#bidding-section button {
+	align-items: center;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.26);
+	border-radius: var(--radius-md);
+	color: #fff;
+	cursor: pointer;
+	display: flex;
+	font-size: 16px;
+	font-weight: 600;
+	height: 48px;
+	justify-content: center;
+	padding: 8px 24px;
+	width: 100%;
+}
+
+#bidding-section button:disabled {
+	opacity: 0.3;
+	cursor: not-allowed;
+}
+
+#game-info {
+	border-top: 1px solid var(--border);
+	padding: 16px;
+	width: 100%;
+	font-size: 14px;
+}
+
+.info-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 4px 0;
+}
+
+.info-label {
+	font-weight: 600;
+	color: var(--text-muted);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.info-value {
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--text-secondary);
+}
+
+#last-play {
+	border-top: 1px solid var(--border);
+	padding: 16px;
+	width: 100%;
+	font-size: 14px;
+}
+
+.last-play-header {
+	font-weight: 600;
+	color: var(--text-secondary);
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.last-play-cards {
+	font-size: 18px;
+	letter-spacing: 2px;
+	margin: 4px 0;
+}
+
+.last-play-type {
+	font-size: 12px;
+	color: var(--cyan);
+	margin-top: 4px;
+}
+
+#chat-section {
+	align-items: flex-start;
+	border-top: 1px solid var(--border);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	gap: 14px;
+	min-height: 0;
+	padding: 20px 16px 0;
+	width: 100%;
+}
+
+#chat-messages {
+	align-items: flex-start;
+	box-sizing: border-box;
+	color: var(--text-secondary);
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	font-size: 14px;
+	font-weight: 600;
+	gap: 10px;
+	letter-spacing: 0.15px;
+	line-height: 20px;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding: 0 0 8px;
+	width: 100%;
+	color: var(--text-secondary);
+	word-wrap: anywhere;
+	overflow-wrap: break-word;
+}
+
+#chat-input-container {
+	border-top: 1px solid var(--border);
+	padding: 12px 0 20px;
+	flex-shrink: 0;
+}
+
+#chat-input {
+	width: 100%;
+	background: var(--surface-solid);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	color: var(--text-primary);
+	font-size: 14px;
+	padding: 10px 14px;
+	outline: none;
+	height: 40px;
+}
+
+.chat-message {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+}
+
+.chat-sender {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--text-primary);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.chat-message.server .chat-sender {
+	color: var(--cyan);
+}
+
+.chat-message.own .chat-sender {
+	color: #9ad37f;
+}
+
+.chat-message-body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+}
+
+.chat-text {
+	background: transparent;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--text-secondary);
+	display: block;
+	line-height: 20px;
+	margin: 0;
+	max-width: 100%;
+	padding: 0;
+	word-wrap: anywhere;
+	overflow-wrap: break-word;
+	white-space: normal;
+}

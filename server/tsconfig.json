@@ -1,31 +1,15 @@
 {
-   "extends": "../tsconfig.json",
-   "compilerOptions": {
-      "outDir": "./dist",
-      "rootDir": ".",
-      "module": "commonjs",
-      "moduleResolution": "node",
-      "lib": [
-         "ES2024"
-      ],
-      "composite": true,
-      "baseUrl": ".",
-      "paths": {
-         "../shared/*": [
-            "../shared/dist/*"
-         ]
-      }
-   },
-   "references": [
-      {
-         "path": "../shared"
-      }
-   ],
-   "include": [
-      "./**/*.ts"
-   ],
-   "exclude": [
-      "dist",
-      "node_modules"
-   ]
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "composite": true,
+        "outDir": "../dist/server",
+        "rootDir": "./src",
+        "tsBuildInfoFile": "../dist/server/.tsbuildinfo",
+        "baseUrl": ".",
+        "paths": {
+            "@shared/*": ["../shared/src/*"]
+        }
+    },
+    "include": ["src"],
+    "references": [{ "path": "../shared" }]
 }

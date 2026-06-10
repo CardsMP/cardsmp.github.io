@@ -2,128 +2,128 @@
 <html lang="en">
 
 <head>
-   <meta charset="UTF-8" />
-   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   <title>Cards</title>
-   <link rel="stylesheet" href="/styles/base.css" />
-   <link rel="stylesheet" href="/styles/menu.css" />
-   <link rel="stylesheet" href="/styles/game.css" />
-   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Fight The Landlord</title>
+	<link rel="stylesheet" href="/styles/base.css" />
+	<link rel="stylesheet" href="/styles/menu.css" />
+	<link rel="stylesheet" href="/styles/game.css" />
+	<link rel="stylesheet" href="/styles/game-sides.css" />
+	<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 </head>
 
 <body>
-   <!-- MENU SCREEN -->
-   <div id="menu" class="screen">
-      <h1 id="menu-header">
-         <img src="/favicon.ico" alt="Bughouse" id="logo" />
-      </h1>
-      <div id="menu-container">
-         <!-- LEFT SIDE: CONTROLS -->
-         <div id="section">
-            <div class="form-group">
-               <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="20" autocomplete="off"
-                  required />
-            </div>
-            <div class="form-group">
-               <button id="action-btn">
-                  <p>+</p>
-               </button>
-               <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="4" autocomplete="off" />
-            </div>
-            <div class="form-group">
-               <button id="setting-btn" class="util-btns">
-                  <p>⚙</p>
-               </button>
-               <button id="info-btn" class="util-btns">
-                  <p>?</p>
-               </button>
-            </div>
-         </div>
-         <!-- RIGHT SIDE: ROOM LISTING -->
-         <div id="lobbies-list"></div>
-      </div>
-      <div id="menu-error"></div>
-   </div>
-   <!-- LOBBY + GAME SCREEN -->
-   <div id="game" class="screen hidden">
-      <div id="game-sidebar">
-         <div id="sidebar-header">
-            <button id="leave-game-btn">⎋</button>
-            <div id="game-title">
-               Room: <span id="game-room-code"></span>
-            </div>
-            <div class="ping-indicator" id="ping-indicator">
-               <div class="ping-bars">
-                  <div class="ping-bar" data-bar-index="0"></div>
-                  <div class="ping-bar" data-bar-index="1"></div>
-                  <div class="ping-bar" data-bar-index="2"></div>
-                  <div class="ping-bar" data-bar-index="3"></div>
-                  <div class="ping-bar" data-bar-index="4"></div>
-               </div>
-            </div>
-         </div>
+	<!-- MENU SCREEN -->
+	<div id="menu" class="screen">
+		<div class="menu-content">
+			<div class="menu-header">
+				<h1 class="game-title">
+					<span class="title-english">Fight The Landlord</span>
+				</h1>
+			</div>
 
-         <!-- Game Control Buttons Section -->
-         <div id="game-controls">
-            <button id="ready-btn">Ready</button>
+			<div class="menu-main">
+				<p class="menu-description">Welcome to the game! Enter a game code below to join an existing game, or
+					create a new game for your friends to join.</p>
 
-            <!-- Bidding Section -->
-            <div id="bidding-section" style="display: none;">
-               <div id="bidding-info">Current bid: 0</div>
-               <button id="bid-1-btn">Bid 1</button>
-               <button id="bid-2-btn">Bid 2</button>
-               <button id="bid-3-btn">Bid 3</button>
-               <button id="bid-pass-btn">Pass</button>
-            </div>
+				<div class="input-group name-group">
+					<input type="text" id="player-name-input" placeholder="Your name" maxlength="20"
+						autocomplete="off" />
+				</div>
 
-            <!-- Playing Phase Buttons -->
-            <button id="play-cards-btn" style="display: none;">Play Cards</button>
-            <button id="pass-btn" style="display: none;">Pass</button>
-         </div>
+				<div class="input-group">
+					<input type="text" id="room-code-input" placeholder="Enter 4 letter game code" maxlength="4"
+						autocomplete="off" />
+					<button id="join-game-btn" class="btn-primary">Join Game</button>
+				</div>
 
-         <!-- Game Info Section -->
-         <div id="game-info"></div>
+				<div class="divider">or</div>
 
-         <!-- Last Play Section -->
-         <div id="last-play" style="display: none;"></div>
+				<button id="create-game-btn" class="btn-secondary">Create Game</button>
+			</div>
+		</div>
+		<div id="menu-error"></div>
+	</div>
 
-         <!-- Player List -->
-         <div id="player-list"></div>
+	<!-- NAME MODAL -->
+	<div id="name-modal" class="modal hidden">
+		<div class="modal-content">
+			<h2>Enter Your Name</h2>
+			<p>You need to set a name before joining a room.</p>
+			<div class="form-group">
+				<input type="text" id="modal-name-input" placeholder="Your name" maxlength="20" required />
+			</div>
+			<div id="modal-error" class="error"></div>
+			<div class="modal-buttons">
+				<button id="submit-name-btn" class="btn-primary">Confirm</button>
+				<button id="close-modal" class="btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
 
-         <!-- Chat Section -->
-         <div id="chat-section">
-            <div id="chat-messages"></div>
-            <div id="chat-input-container">
-               <input type="text" id="chat-input" placeholder="Type message..." maxlength="200" />
-            </div>
-         </div>
-      </div>
-      <div id="game-area"></div>
-   </div>
-   <!-- NAME MODAL -->
-   <div id="name-modal" class="modal hidden">
-      <div class="modal-content">
-         <h2>Please Enter Your Name</h2>
-         <p>You need to set a name before joining a room</p>
-         <div class="form-group">
-            <input type="text" id="modal-name-input" placeholder="Enter your name" maxlength="20" required />
-         </div>
-         <div id="modal-error" class="error"></div>
-         <div class="modal-buttons">
-            <button id="submit-name-btn" class="primary-btn">Confirm</button>
-            <button id="close-modal" class="secondary-btn">Cancel</button>
-         </div>
-      </div>
-   </div>
-   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-   <script type="module" src="/dist/client.js"></script>
-   <script type="importmap">
-   {
-     "imports": {
-       "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-     }
-   }
-   </script>
+	<!-- GAME SCREEN -->
+	<div id="game" class="screen hidden">
+
+		<!-- LEFT: Scoreboard Sidebar -->
+		<div id="game-sidebar">
+			<div id="sidebar-header">
+				<div id="game-title">
+					<span class="game-room-title" id="game-room-code">----</span>
+				</div>
+				<button id="leave-game-btn" class="btn-leave">⎋</button>
+			</div>
+
+			<div id="scoreboard-section">
+				<h3 class="sidebar-section-title">Scoreboard</h3>
+				<div id="player-list"></div>
+			</div>
+
+			<div id="chat-section">
+				<h3 class="sidebar-section-title">Chat</h3>
+				<div id="chat-messages"></div>
+				<div id="chat-input-container">
+					<input type="text" id="chat-input" placeholder="Say something!" maxlength="200" />
+				</div>
+			</div>
+
+			<!-- Hidden controls (logic-only, UI moved to game area) -->
+			<div id="game-controls" style="display:none;">
+				<button id="ready-btn" class="btn-game btn-white-transparent">Ready</button>
+				<div id="bidding-section" style="display: none;">
+					<div id="bidding-info">Current bid: 0</div>
+					<button id="bid-1-btn" class="btn-white-transparent">Bid 1</button>
+					<button id="bid-2-btn" class="btn-white-transparent">Bid 2</button>
+					<button id="bid-3-btn" class="btn-white-transparent">Bid 3</button>
+					<button id="bid-pass-btn" class="btn-white-transparent">Pass</button>
+				</div>
+				<button id="play-cards-btn" style="display: none;" class="btn-game btn-white-transparent">Play
+					Cards</button>
+				<button id="pass-btn" style="display: none;" class="btn-game btn-white-transparent">Pass</button>
+			</div>
+
+			<!-- Last Play (hidden, shown in game area) -->
+			<div id="last-play" style="display: none;"></div>
+		</div>
+
+		<!-- CENTER: Game Area (felt table + cards) -->
+		<div id="game-area">
+			<!-- Felt background -->
+			<div id="game-area-table"></div>
+
+			<!-- Turn banner -->
+			<div id="turn-banner" style="display:none;"></div>
+
+			<!-- Center table message (bidding info etc) -->
+			<div id="table-center-message" style="display:none;"></div>
+
+			<div id="card-hand-area"></div>
+			<div id="action-buttons"></div>
+		</div>
+
+	</div>
+
+	<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+	<script type="module" src="/src/client.js"></script>
 </body>
 
 </html>

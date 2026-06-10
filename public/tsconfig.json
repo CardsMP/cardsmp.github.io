@@ -1,27 +1,14 @@
 {
-   "extends": "../tsconfig.json",
-   "compilerOptions": {
-      "outDir": "./dist",
-      "rootDir": ".",
-      "module": "ES2022",
-      "moduleResolution": "bundler",
-      "lib": [
-         "ES2024",
-         "DOM",
-         "DOM.Iterable"
-      ],
-      "composite": true
-   },
-   "references": [
-      {
-         "path": "../shared"
-      }
-   ],
-   "include": [
-      "./**/*.ts"
-   ],
-   "exclude": [
-      "dist",
-      "node_modules"
-   ]
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "composite": true,
+        "outDir": "../dist/public",
+        "rootDir": "./src",
+        "tsBuildInfoFile": "../dist/public/.tsbuildinfo",
+        "paths": {
+            "@shared/*": ["../shared/src/*"]
+        }
+    },
+    "include": ["src"],
+    "references": [{ "path": "../shared" }]
 }
