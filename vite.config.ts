@@ -6,14 +6,33 @@ export default defineConfig({
 	// Ensure deep links like /games/ABCD serve index.html in dev.
 	appType: "spa",
 	root: "public",
+
 	resolve: {
-		alias: { "@shared": path.resolve(process.cwd(), "shared/src") },
+		alias: {
+			"@shared": path.resolve(process.cwd(), "shared/src"),
+		},
 	},
+
 	build: {
 		outDir: "../dist/public",
 		emptyOutDir: true,
 	},
+
 	server: {
+		host: "0.0.0.0",
+		port: 3000,
+		allowedHosts: true,
+		proxy: {
+			"/socket.io": {
+				target: "http://localhost:8000",
+				ws: true,
+				changeOrigin: true,
+			},
+		},
+	},
+
+	preview: {
+		host: "0.0.0.0",
 		port: 3000,
 		allowedHosts: true,
 		proxy: {

@@ -1,0 +1,19 @@
+services:
+    cardsmp:
+        build:
+            context: .
+        container_name: cardsmp
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            HOST: 0.0.0.0
+            PORT: 8000
+        expose:
+            - "3000"
+            - "8000"
+        networks:
+            - web
+
+networks:
+    web:
+        external: true
