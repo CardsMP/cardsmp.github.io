@@ -1,5 +1,6 @@
 import type { Socket } from "socket.io-client";
 import { io } from "socket.io-client";
+import { config } from "@shared/config";
 import { Player } from "@shared/player";
 import type { Room } from "@shared/room";
 import { Settings } from "./settings";
@@ -20,7 +21,10 @@ export class Session {
 			globalThis.sessionStorage?.getItem("name") || undefined;
 		const playerID = id ?? storedId;
 		const token = auth ?? storedAuth;
-		const socketUrl = globalThis.location.origin;
+		const socketUrl =
+			globalThis.location.port === String(config.clientPort)
+				? `${globalThis.location.protocol}//${globalThis.location.hostname}:${config.serverPort}`
+				: globalThis.location.origin;
 
 		this.socket =
 			playerID && token

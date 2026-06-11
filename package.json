@@ -16,7 +16,7 @@
 		"dev:client": "vite",
 		"start": "concurrently --names \"server,vite\" --prefix-colors \"blue,magenta\" \"npm run start:server\" \"npm run start:client\"",
 		"start:server": "node dist/server/index.js",
-		"start:client": "vite preview --host 0.0.0.0 --port 3000 --strictPort",
+		"start:client": "vite preview",
 		"clean": "rm -rf dist"
 	},
 	"dependencies": {

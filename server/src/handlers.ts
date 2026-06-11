@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 import { cardToString, type Card } from "@shared/card";
-import { Game, GamePhase, PlayType } from "@shared/game";
+import { GamePhase, PlayType } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
 import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
 import type { GameSocket } from "./index";
@@ -135,25 +135,19 @@ export function setupHandlers(socket: GameSocket): void {
 
 		io.to(socket.room.code).emit("p-played-cards", cards);
 
-		const playType = Game.validatePlayType(
-            cards,
-            socket.room.game.isDoubleDeck,
-        );
-        if (
-            playType?.type === PlayType.BOMB ||
-            playType?.type === PlayType.ROCKET
-        ) {
-            broadcastSystemChat(
-                socket.room,
-                `${socket.player.name || "A player"} played a bomb. Bet doubled to ${socket.room.game.bet}.`,
-            );
-        }
-		else if (
-			playType?.type === PlayType.BIG_ROCKET
+		const lastPlay = socket.room.game.lastPlay;
+		if (
+			lastPlay?.type === PlayType.BOMB ||
+			lastPlay?.type === PlayType.ROCKET
 		) {
+			socket.room.game.bet *= 2;
+			io.to(socket.room.code).emit(
+				"p-bet-landlord",
+				socket.room.game.bet,
+			);
 			broadcastSystemChat(
 				socket.room,
-				`${socket.player.name || "A player"} played a big rocket. Bet quadrupled to ${socket.room.game.bet}.`,
+				`${socket.player.name || "A player"} played a bomb. Bet doubled to ${socket.room.game.bet}.`,
 			);
 		}
 
@@ -194,10 +188,9 @@ function applyRoundScore(room: Room, landlordWon: boolean): void {
 		const won = landlordWon
 			? player.id === landlordId
 			: player.id !== landlordId;
-		if (!won && player.id === landlordId) player.score -= roundScore * (room.players.size - 1); //landlord lose
-		else if (won && player.id === landlordId) player.score += roundScore * (room.players.size - 1); //landlord win
-		else if (!won && player.id !== landlordId) player.score -= roundScore; //farmer lose
-		else if (won && player.id !== landlordId) player.score += roundScore; //farmer win
+		if (!won) continue;
+
+		player.score += roundScore;
 
 		const gamePlayer = room.game.players.find((p) => p.id === player.id);
 		if (gamePlayer) gamePlayer.score = player.score;

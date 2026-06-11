@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
 import { Server, Socket } from "socket.io";
+import { config } from "@shared/config";
 import { Player } from "@shared/player";
 import type { Room } from "@shared/room";
 import path from "node:path";
@@ -160,7 +161,7 @@ io.on("connection", (socket: Socket) => {
 	emitRoomList();
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = Number(process.env.PORT) || config.serverPort;
 httpServer.listen(PORT, () => {
 	const startTime = Date.now();
 	console.log(

@@ -1,13 +1,34 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
+import { cp } from "node:fs/promises";
+import { config } from "./shared/src/config";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+
+function copyStaticAssetDirs() {
+	return {
+		name: "copy-static-asset-dirs",
+		async closeBundle() {
+			const distPublicDir = path.resolve(rootDir, "dist/public");
+			const assetDirs = ["cards", "img"];
+
+			await Promise.all(
+				assetDirs.map((dir) =>
+					cp(path.resolve(rootDir, "public", dir), path.join(distPublicDir, dir), {
+						recursive: true,
+					}),
+				),
+			);
+		},
+	};
+}
 
 export default defineConfig({
 	appType: "spa",
 	root: "public",
 	publicDir: false,
+	plugins: [copyStaticAssetDirs()],
 
 	resolve: {
 		alias: {
@@ -22,17 +43,22 @@ export default defineConfig({
 
 	server: {
 		host: "0.0.0.0",
-		port: 3000,
+		port: config.clientPort,
 		allowedHosts: true,
 		fs: {
 			allow: [rootDir],
 		},
 		proxy: {
 			"/socket.io": {
-				target: "http://localhost:8000",
+				target: `http://localhost:${config.serverPort}`,
 				ws: true,
 				changeOrigin: true,
 			},
 		},
+	},
+	preview: {
+		host: "0.0.0.0",
+		port: config.clientPort,
+		strictPort: true,
 	},
 });
