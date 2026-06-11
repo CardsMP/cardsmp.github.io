@@ -7,7 +7,6 @@ import { Player } from "@shared/player";
 import type { Room } from "@shared/room";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createServer } from "vite";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -41,6 +40,7 @@ const publicPath = isDevelopment
 
 // Setup Vite in dev, static serving in production
 if (isDevelopment) {
+	const { createServer } = await import("vite");
 	const vite = await createServer({
 		server: { middlewareMode: true },
 		appType: "spa",

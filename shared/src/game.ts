@@ -416,7 +416,10 @@ export class Game {
 	private static isStraight(sorted: Card[], groupSize: number): boolean {
 		if (sorted.length % groupSize !== 0) return false;
 
-		for (const card of sorted) if (card.type !== "Playing") return false;
+		for (const card of sorted) {
+			if (card.type !== "Playing") return false;
+			if (card.rank === 2) return false;
+		}
 
 		// Now TypeScript knows all cards are Playing cards
 		const playingCards = sorted as Extract<Card, { type: "Playing" }>[];
@@ -435,15 +438,20 @@ export class Game {
 
 			if (index > 0) {
 				const previousCard = playingCards[(index - 1) * groupSize];
-				const expectedValue = Hand.getCardValue(previousCard) + 1;
-				const actualValue = Hand.getCardValue(firstCard);
+				const expectedValue =
+					Game.getStraightRankValue(previousCard) + 1;
+				const actualValue = Game.getStraightRankValue(firstCard);
 
-				if (actualValue !== expectedValue || actualValue >= 13)
+				if (actualValue !== expectedValue)
 					return false;
 			}
 		}
 
 		return numberGroups >= (groupSize === 1 ? 5 : groupSize === 2 ? 3 : 2);
+	}
+
+	private static getStraightRankValue(card: Extract<Card, { type: "Playing" }>): number {
+		return card.rank === 1 ? 14 : card.rank;
 	}
 
 	static canBeat(play: Play, lastPlay: Play): boolean {

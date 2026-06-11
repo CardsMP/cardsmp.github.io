@@ -6,6 +6,7 @@ export default defineConfig({
 	// Ensure deep links like /games/ABCD serve index.html in dev.
 	appType: "spa",
 	root: "public",
+	publicDir: ".",
 
 	resolve: {
 		alias: {
