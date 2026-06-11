@@ -118,11 +118,11 @@ export function updateUIPlayerList(): void {
 
 		const isLandlord = gs.room.game.landlord?.id === player.id;
 		const isYou = player.id === gs.player.id;
-		const score = player.score ?? 0;
+		const cardCount = player.handCount ?? player.hand.cards.length;
 
 		div.innerHTML = `
 			<div class="player-name">${escapeHtml(player.name || "?")}${isYou ? " (You)" : ""}${isLandlord ? '<span class="landlord-indicator">L</span>' : ""}</div>
-			<div class="card-count">${score}</div>
+			<div class="card-count">${cardCount}</div>
 		`;
 		playerList.append(div);
 	}
@@ -204,10 +204,7 @@ function getSeatedPlayers(): Player[] {
 }
 
 function getSortedRoomPlayers(): Player[] {
-	const players =
-		gs.room.game.players.length > 0
-			? [...gs.room.game.players]
-			: [...gs.room.players.values()];
+	const players = [...gs.room.players.values()];
 
 	return players.sort((a, b) => {
 		const aHasIndex = a.index !== undefined;
