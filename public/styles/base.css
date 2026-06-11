@@ -21,6 +21,8 @@
 	--background: #141619;
 	--border: rgba(255, 255, 255, 0.08);
 	--border-strong: rgba(255, 255, 255, 0.14);
+	--card-width: 102px;
+	--card-height: 142px;
 
 	--text: rgba(255, 255, 255, 0.92);
 	--text-secondary: rgba(255, 255, 255, 0.5);
@@ -40,8 +42,6 @@ body {
 
 .screen {
 	display: flex;
-	position: relative;
-	z-index: 1;
 	min-height: 100vh;
 }
 
@@ -56,96 +56,68 @@ label {
 }
 
 input {
-	background-color: var(--surface-solid);
+	flex-shrink: 0;
+	outline: none;
 	border: 1px solid var(--border-strong);
-	border-radius: var(--radius-sm);
-	color: var(--text);
-	font-weight: 500;
+	background-color: var(--surface-solid);
 	padding: 0 16px;
-	width: 424px;
 	height: 48px;
+	color: var(--text);
 	font-size: 16px;
 	line-height: 24px;
-	outline: none;
-	flex-shrink: 0;
 }
 
 input:focus {
 	outline: none;
 }
 
-.btn-primary {
-	align-items: center;
-	background-color: var(--cyan);
-	border: none;
-	color: #0c1132;
+button {
 	display: flex;
-	flex-direction: row;
-	font-size: 16px;
-	font-weight: 600;
-	gap: 12px;
-	height: 48px;
 	justify-content: center;
-	letter-spacing: 0.15px;
-	line-height: 24px;
-	padding: 8px 24px;
+	align-items: center;
 	cursor: pointer;
-	flex-shrink: 0;
+	box-sizing: border-box;
+	border: none;
+	padding: 8px 24px;
+	height: 48px;
+	font-weight: 600;
+	font-size: 16px;
+}
+
+button:disabled {
+	cursor: not-allowed;
+}
+
+.btn-primary {
+	background-color: var(--cyan);
+	color: #0c1132;
 }
 
 .btn-primary:hover {
 	background: var(--cyan-bright);
 }
-.btn-primary:active {
-	background: var(--cyan-dim);
-}
 
 .btn-secondary {
-	align-items: center;
 	align-self: stretch;
-	background: var(--surface-solid);
 	border: 1px solid var(--border-strong);
-	border-radius: var(--radius-md);
-	box-sizing: border-box;
+	background: var(--surface-solid);
 	color: var(--text-muted);
-	display: flex;
-	flex-direction: row;
-	font-size: 16px;
-	font-weight: 600;
-	gap: 12px;
-	height: 48px;
-	justify-content: center;
-	line-height: 24px;
-	outline: none;
-	padding: 8px 24px;
-	margin-top: 0;
-	cursor: pointer;
 }
 
 .btn-secondary:hover {
 	color: var(--text-secondary);
-	border-color: rgba(255, 255, 255, 0.25);
 }
 
-button.btn-white-transparent {
+.btn-white-transparent {
 	background: rgba(255, 255, 255, 0.1);
-	border: 1px solid rgba(255, 255, 255, 0.26);
-	border-radius: var(--radius-md);
 	color: #fff;
-	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
-button.btn-white-transparent:hover:not(:disabled),
-button.btn-white-transparent:active:not(:disabled) {
+.btn-white-transparent:hover {
 	background: rgba(255, 255, 255, 0.18);
-	border-color: rgba(255, 255, 255, 0.38);
-	color: #fff;
 }
 
-button.btn-white-transparent:disabled {
+.btn-white-transparent:disabled {
 	background: rgba(255, 255, 255, 0.06);
-	border-color: rgba(255, 255, 255, 0.12);
 	color: rgba(255, 255, 255, 0.42);
-	cursor: not-allowed;
-	box-shadow: none;
 }

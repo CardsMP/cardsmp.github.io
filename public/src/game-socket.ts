@@ -7,11 +7,13 @@ import {
 	endGameUI,
 	showRoomElements,
 	startGameUI,
-	updateUIAllChat,
 	updateUIGame,
 	updateUIPlayerList,
+} from "./game-ui-render";
+import {
+	updateUIAllChat,
 	updateUIPushChat,
-} from "./game-ui";
+} from "./game-ui-chat";
 import { gs } from "./session";
 import { updateURL } from "./url";
 
@@ -58,9 +60,6 @@ export function initGameSocket(): void {
 		gs.player =
 			gs.room.game.players.find((p) => p.id === gs.player.id) ??
 			gs.player;
-
-		for (const player of gs.room.game.players.values())
-			console.log(player.hand);
 
 		startGameUI();
 	});

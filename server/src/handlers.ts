@@ -2,7 +2,7 @@ import type { Server } from "socket.io";
 import type { Card } from "@shared/card";
 import { GamePhase } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
-import { Room, RoomStatus } from "@shared/room";
+import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
 import type { GameSocket } from ".";
 import { io, emitRoomList, MENU_ROOM, rooms, gameSockets, profiles } from ".";
 
@@ -12,7 +12,14 @@ export function setupHandlers(socket: GameSocket): void {
 	});
 
 	socket.on("set-name", (name: string) => {
-		socket.player.name = name.trim().slice(0, 20);
+		const trimmedName = name.trim().slice(0, 20);
+		socket.player.name = trimmedName;
+
+		const profile = profiles.get(socket.player.id);
+		if (profile) profile.name = trimmedName;
+
+		const roomPlayer = socket.room?.players.get(socket.player.id);
+		if (roomPlayer) roomPlayer.name = trimmedName;
 	});
 
 	socket.on("create-room", () => {
@@ -32,11 +39,6 @@ export function setupHandlers(socket: GameSocket): void {
 		emitRoomList();
 	});
 
-	socket.on("leave-room", () => {
-		handlePlayerLeave(socket);
-		socket.join(MENU_ROOM);
-	});
-
 	socket.on("disconnect", () => {
 		gameSockets.delete(socket.id);
 		handlePlayerLeave(socket);
@@ -51,7 +53,10 @@ export function setupHandlers(socket: GameSocket): void {
 		}
 
 		if (!socket.room.tryStartRoom()) {
-			socket.emit("error", "Need exactly 3 players to start");
+			socket.emit(
+				"error",
+				`Need 3 or 4 players to start`,
+			);
 			return;
 		}
 
@@ -170,12 +175,18 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 
 	const playerInRoom = room.players.get(socket.player.id);
 	if (playerInRoom) {
+		socket.player.name = playerInRoom.name;
 		playerInRoom.status = PlayerStatus.NOT_READY;
-		socket.emit("joined-room", room.serialize());
+		socket.emit("joined-room", room.serialize(socket.player.index));
 		socket
 			.to(socket.room.code)
 			.emit("p-set-status", socket.player.id, PlayerStatus.NOT_READY);
 	} else {
+		if (room.players.size >= MAX_ROOM_PLAYERS) {
+			socket.emit("error", "Room is full");
+			return;
+		}
+
 		socket.player.status = PlayerStatus.NOT_READY;
 		room.addPlayer(socket.player);
 		io.to(socket.room.code).emit(
@@ -183,7 +194,7 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 			socket.player.id,
 			socket.player.name,
 		);
-		socket.emit("joined-room", room.serialize());
+		socket.emit("joined-room", room.serialize(socket.player.index));
 	}
 }
 

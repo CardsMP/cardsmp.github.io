@@ -7,8 +7,11 @@
 	<title>Fight The Landlord</title>
 	<link rel="stylesheet" href="/styles/base.css" />
 	<link rel="stylesheet" href="/styles/menu.css" />
-	<link rel="stylesheet" href="/styles/game.css" />
-	<link rel="stylesheet" href="/styles/game-sides.css" />
+	<link rel="stylesheet" href="/styles/game-layout.css" />
+	<link rel="stylesheet" href="/styles/game-table.css" />
+	<link rel="stylesheet" href="/styles/game-cards.css" />
+	<link rel="stylesheet" href="/styles/game-sidebar.css" />
+	<link rel="stylesheet" href="/styles/game-chat.css" />
 	<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 </head>
 
@@ -67,10 +70,7 @@
 		<!-- LEFT: Scoreboard Sidebar -->
 		<div id="game-sidebar">
 			<div id="sidebar-header">
-				<div id="game-title">
-					<span class="game-room-title" id="game-room-code">----</span>
-				</div>
-				<button id="leave-game-btn" class="btn-leave">⎋</button>
+				<span class="game-room-title" id="game-room-code">----</span>
 			</div>
 
 			<div id="scoreboard-section">
@@ -81,43 +81,26 @@
 			<div id="chat-section">
 				<h3 class="sidebar-section-title">Chat</h3>
 				<div id="chat-messages"></div>
-				<div id="chat-input-container">
-					<input type="text" id="chat-input" placeholder="Say something!" maxlength="200" />
-				</div>
 			</div>
 
-			<!-- Hidden controls (logic-only, UI moved to game area) -->
-			<div id="game-controls" style="display:none;">
-				<button id="ready-btn" class="btn-game btn-white-transparent">Ready</button>
-				<div id="bidding-section" style="display: none;">
-					<div id="bidding-info">Current bid: 0</div>
-					<button id="bid-1-btn" class="btn-white-transparent">Bid 1</button>
-					<button id="bid-2-btn" class="btn-white-transparent">Bid 2</button>
-					<button id="bid-3-btn" class="btn-white-transparent">Bid 3</button>
-					<button id="bid-pass-btn" class="btn-white-transparent">Pass</button>
-				</div>
-				<button id="play-cards-btn" style="display: none;" class="btn-game btn-white-transparent">Play
-					Cards</button>
-				<button id="pass-btn" style="display: none;" class="btn-game btn-white-transparent">Pass</button>
+			<div id="chat-input-container">
+				<input type="text" id="chat-input" placeholder="Say something!" maxlength="200" />
 			</div>
-
-			<!-- Last Play (hidden, shown in game area) -->
-			<div id="last-play" style="display: none;"></div>
 		</div>
 
-		<!-- CENTER: Game Area (felt table + cards) -->
+		<!-- CENTER: Game Area (table + cards) -->
 		<div id="game-area">
-			<!-- Felt background -->
-			<div id="game-area-table"></div>
-
-			<!-- Turn banner -->
-			<div id="turn-banner" style="display:none;"></div>
-
-			<!-- Center table message (bidding info etc) -->
-			<div id="table-center-message" style="display:none;"></div>
+			<div id="notification-area">
+				<div id="turn-banner" class="game-top-notification" style="display:none;"></div>
+			</div>
+			<div id="game-area-table">
+				<div id="table-center-message"></div>
+			</div>
 
 			<div id="card-hand-area"></div>
-			<div id="action-buttons"></div>
+			<div id="action-area">
+				<div id="action-buttons"></div>
+			</div>
 		</div>
 
 	</div>

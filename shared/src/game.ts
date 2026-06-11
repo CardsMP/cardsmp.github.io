@@ -2,6 +2,11 @@ import type { Card, Rank, Suit } from "./card";
 import type { SerializedPlayer } from "./player";
 import { Player } from "./player";
 
+const PLAYERS_PER_ROOM = 4;
+const CARDS_PER_PLAYER = 13;
+const PLAYING_SUITS: Suit[] = ["h", "d", "c", "s"];
+const PLAYING_RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
 export interface SerializedGame {
 	bottom: Card[];
 	biddingTurns: number;
@@ -97,18 +102,33 @@ export class Game {
 	// Server Only
 	private initializeDeck(): void {
 		this.bottom = [];
-		const suits: Suit[] = ["h", "d", "c", "s"];
-		const ranks: Rank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+		const deckCount = this.players.length === PLAYERS_PER_ROOM ? 2 : 1;
 
-		for (const suit of suits) {
-			for (const rank of ranks)
-				this.bottom.push({ type: "Playing", suit, rank });
+		for (let deckIndex = 0; deckIndex < deckCount; deckIndex++) {
+			for (const suit of PLAYING_SUITS) {
+				for (const rank of PLAYING_RANKS) {
+					this.bottom.push({
+						type: "Playing",
+						suit,
+						rank,
+						uid: `deck${deckIndex}-${suit}${rank}`,
+					});
+				}
+			}
+
+			this.bottom.push(
+				{
+					type: "Joker",
+					color: "BLACK",
+					uid: `deck${deckIndex}-joker-black`,
+				},
+				{
+					type: "Joker",
+					color: "RED",
+					uid: `deck${deckIndex}-joker-red`,
+				},
+			);
 		}
-
-		this.bottom.push(
-			{ type: "Joker", color: "BLACK" },
-			{ type: "Joker", color: "RED" },
-		);
 	}
 
 	// Server Only
@@ -124,12 +144,14 @@ export class Game {
 
 	// Server Only
 	private dealCards(): void {
-		let cardIndex = 3;
-		const bottomCards = this.bottom.slice(0, 3);
+		const isFourPlayerGame = this.players.length === PLAYERS_PER_ROOM;
+		const bottomCardCount = isFourPlayerGame ? 4 : 3;
+		const cardsPerPlayer = isFourPlayerGame ? CARDS_PER_PLAYER : 17;
+		let cardIndex = bottomCardCount;
+		const bottomCards = this.bottom.slice(0, bottomCardCount);
 
 		for (const player of this.players) player.hand = new Hand([]);
-		for (let index = 0; index < 17; index++) {
-			// 17 cards per player in DDZ
+		for (let index = 0; index < cardsPerPlayer; index++) {
 			for (const player of this.players)
 				player.hand.cards.push(this.bottom[cardIndex++]);
 		}
@@ -512,6 +534,10 @@ export class Hand {
 	}
 
 	static cardsEqual(a: Card, b: Card): boolean {
+		if (a.type !== "Flipped" && b.type !== "Flipped") {
+			if (a.uid !== undefined || b.uid !== undefined) return a.uid === b.uid;
+		}
+
 		if (a.type === "Joker" && b.type === "Joker")
 			return a.color === b.color;
 

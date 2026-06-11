@@ -5,11 +5,13 @@ export type Playing = {
 	type: "Playing";
 	suit: Suit;
 	rank: Rank;
+	uid?: string;
 };
 
 export type Joker = {
 	type: "Joker";
 	color: "RED" | "BLACK";
+	uid?: string;
 };
 
 export type Flipped = {

@@ -1,4 +1,3 @@
-import { stopPingUpdates } from "./game-ui";
 import { sn } from "./session";
 
 // Store the pending action
@@ -51,11 +50,6 @@ export function initMenuControls(): void {
 	});
 
 	setupNameInput("player-name-input");
-
-	const leaveRoomButton = document.querySelector("#leave-game-btn");
-	leaveRoomButton?.addEventListener("click", () => {
-		leaveRoom();
-	});
 
 	setupNameModal();
 }
@@ -180,29 +174,6 @@ function setupNameInput(elementId: string) {
 	input?.addEventListener("blur", handleNameSubmit);
 }
 
-export function leaveRoom(): void {
-	globalThis.history.replaceState({}, "", "/");
-	sn.socket.emit("leave-room");
-	showMenuScreen();
-}
-
-export function showScreen(screenId: string): void {
-	for (const screen of document.querySelectorAll(".screen"))
-		screen.classList.add("hidden");
-
-	const targetScreen = document.querySelector(`#${screenId}`);
-	targetScreen?.classList.remove("hidden");
-}
-
-export function showMenuScreen(): void {
-	showScreen("menu");
-	clearErrors();
-	const gameArea = document.querySelector("#game-area");
-	if (gameArea) gameArea.innerHTML = "";
-
-	stopPingUpdates();
-}
-
 export function showError(elementId: string, message: string): void {
 	const errorElement = document.querySelector(`#${elementId}`);
 	if (errorElement) {
@@ -211,13 +182,4 @@ export function showError(elementId: string, message: string): void {
 			errorElement.textContent = "";
 		}, 5000);
 	}
-}
-
-export function clearErrors(): void {
-	for (const error of document.querySelectorAll(".error"))
-		error.textContent = "";
-}
-
-export function updateLobbiesList(): void {
-	// Rooms are now private, so we don't display them
 }

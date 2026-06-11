@@ -3,7 +3,6 @@ import { Hand } from "./game";
 
 export enum PlayerStatus {
    NOT_READY = "not_ready",
-   READY = "ready",
    DISCONNECTED = "disconnected",
 }
 

@@ -9,6 +9,8 @@ export enum RoomStatus {
 	PLAYING = "playing",
 }
 
+export const MAX_ROOM_PLAYERS = 4;
+
 export interface RoomListing {
 	code: string;
 	numPlayers: number;
@@ -37,15 +39,18 @@ export class Room {
 		this.chat = new Chat();
 	}
 
-	serialize(): SerializedRoom {
+	serialize(viewerIndex?: number): SerializedRoom {
+		const hideHands = this.status === RoomStatus.PLAYING;
 		const serializedPlayers: Record<string, SerializedPlayer> = {};
 		for (const [id, player] of this.players.entries())
-			serializedPlayers[id] = player.serialize();
+			serializedPlayers[id] = player.serialize(
+				hideHands ? player.index !== viewerIndex : false,
+			);
 
 		return {
 			code: this.code,
 			status: this.status,
-			game: this.game.serialize(),
+			game: this.game.serialize(viewerIndex),
 			chat: this.chat.serialize(),
 			players: serializedPlayers,
 		};
@@ -101,7 +106,8 @@ export class Room {
 
 	tryStartRoom(): boolean {
 		if (this.status !== RoomStatus.LOBBY) return false;
-		if (this.players.size !== 3) return false;
+		if (this.players.size < 3 || this.players.size > MAX_ROOM_PLAYERS)
+			return false;
 
 		this.status = RoomStatus.PLAYING;
 		this.game.startGame([...this.players.values()]);

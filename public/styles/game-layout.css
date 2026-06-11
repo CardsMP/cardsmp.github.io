@@ -1,0 +1,43 @@
+#game {
+	display: flex;
+	position: relative;
+	flex-direction: row;
+	background: var(--background);
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+
+#game-area {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 24px;
+	padding: 24px 0;
+	width: 100%;
+	min-width: 0;
+	height: 100vh;
+	overflow: hidden;
+}
+
+#notification-area,
+#action-area {
+	display: flex;
+	flex: 0 0 48px;
+	justify-content: center;
+	align-items: center;
+	min-height: 48px;
+	width: 100%;
+}
+
+#game-area-table {
+	display: flex;
+	position: relative;
+	flex: 1 1 auto;
+	--table-width: 600px;
+	--table-height: 320px;
+	z-index: 1;
+	background: transparent;
+	min-height: 0;
+	overflow: hidden;
+}
