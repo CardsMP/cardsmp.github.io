@@ -1,12 +1,12 @@
-import type { Card, Rank, Suit } from "./card";
+import { JOKER_RANK, type Card, type Suit } from "./card";
 import type { SerializedPlayer } from "./player";
 import { Player } from "./player";
 
-const PLAYERS_PER_ROOM = 4;
+const PLAYERS_FOR_DOUBLE_DECK = 4;
 const THREE_PLAYER_CARDS_PER_PLAYER = 17;
 const FOUR_PLAYER_CARDS_PER_PLAYER = 25;
 const PLAYING_SUITS: Suit[] = ["h", "d", "c", "s"];
-const PLAYING_RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+const PLAYING_RANKS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 export interface SerializedGame {
 	bottom: Card[];
@@ -87,13 +87,13 @@ export class Game {
 	// Server Only
 	private initializeDeck(): void {
 		this.bottom = [];
-		const deckCount = this.players.length === PLAYERS_PER_ROOM ? 2 : 1;
+		const deckCount =
+			this.players.length === PLAYERS_FOR_DOUBLE_DECK ? 2 : 1;
 
 		for (let deckIndex = 0; deckIndex < deckCount; deckIndex++) {
 			for (const suit of PLAYING_SUITS) {
 				for (const rank of PLAYING_RANKS) {
 					this.bottom.push({
-						type: "Playing",
 						suit,
 						rank,
 						uid: `deck${deckIndex}-${suit}${rank}`,
@@ -103,13 +103,13 @@ export class Game {
 
 			this.bottom.push(
 				{
-					type: "Joker",
-					color: "BLACK",
+					rank: JOKER_RANK,
+					suit: "Black Joker",
 					uid: `deck${deckIndex}-joker-black`,
 				},
 				{
-					type: "Joker",
-					color: "RED",
+					rank: JOKER_RANK,
+					suit: "Red Joker",
 					uid: `deck${deckIndex}-joker-red`,
 				},
 			);
@@ -129,7 +129,8 @@ export class Game {
 
 	// Server Only
 	private dealCards(): void {
-		const isFourPlayerGame = this.players.length === PLAYERS_PER_ROOM;
+		const isFourPlayerGame =
+			this.players.length === PLAYERS_FOR_DOUBLE_DECK;
 		const bottomCardCount = isFourPlayerGame ? 4 : 3;
 		const cardsPerPlayer = isFourPlayerGame
 			? FOUR_PLAYER_CARDS_PER_PLAYER
@@ -261,11 +262,20 @@ export class Game {
 			(a, b) => Hand.getCardValue(a) - Hand.getCardValue(b),
 		);
 
+		// Big Rocket: 4 Jokers
+		if (sorted.length === 4 && sorted.every((c) => c.rank === JOKER_RANK)) {
+			return {
+				type: PlayType.BIG_ROCKET,
+				value: 1001,
+			};
+		}
+
 		// Rocket: Both Jokers
 		if (
 			sorted.length === 2 &&
-			sorted[0].type === "Joker" &&
-			sorted[1].type === "Joker"
+			sorted[0].rank === 14 &&
+			sorted[1].rank === 14 &&
+			sorted[0].suit !== sorted[1].suit
 		) {
 			return {
 				type: PlayType.ROCKET,
@@ -275,13 +285,13 @@ export class Game {
 
 		const rankCounts = Game.countRanks(sorted);
 		const counts = Object.values(rankCounts);
-		const uniqueRanks = Object.keys(rankCounts);
+		const uniqueRanks = Object.keys(rankCounts).map(Number);
 
-		// Bomb: 4 of a kind
-		if (sorted.length === 4 && counts.length === 1 && counts[0] === 4) {
+		// Bombs (bigger bombs beat smaller ones, higher ranks beat lower ranks):
+		if (sorted.length === 8 && counts.length === 1 && counts[0] === 8) {
 			return {
 				type: PlayType.BOMB,
-				value: 100 + Hand.getCardValue(sorted[0]),
+				value: sorted.length * 20 + Hand.getCardValue(sorted[0]),
 			};
 		}
 
@@ -319,14 +329,7 @@ export class Game {
 			const tripleRank = uniqueRanks.find((r) => rankCounts[r] === 3)!;
 			return {
 				type: PlayType.TRIPLE_WITH_SINGLE,
-				value: Hand.getCardValue(
-					sorted.find(
-						(c) =>
-							(c.type === "Playing" &&
-								c.rank === Number(tripleRank)) ||
-							c.type === "Joker",
-					)!,
-				),
+				value: Hand.getCardValue(sorted.find((c) => c.rank === tripleRank)!),
 			};
 		}
 
@@ -340,14 +343,7 @@ export class Game {
 			const tripleRank = uniqueRanks.find((r) => rankCounts[r] === 3)!;
 			return {
 				type: PlayType.TRIPLE_WITH_PAIR,
-				value: Hand.getCardValue(
-					sorted.find(
-						(c) =>
-							(c.type === "Playing" &&
-								c.rank === Number(tripleRank)) ||
-							c.type === "Joker",
-					)!,
-				),
+				value: Hand.getCardValue(sorted.find((c) => c.rank === tripleRank)!),
 			};
 		}
 
@@ -371,14 +367,10 @@ export class Game {
 			};
 		}
 
-		// Triple straight (airplane): 2+ consecutive triples
-		if (
-			sorted.length >= 6 &&
-			sorted.length % 3 === 0 &&
-			Game.isStraight(sorted, 3)
-		) {
+		// Airplane
+		if (Game.isAirplane(sorted, rankCounts)) {
 			return {
-				type: PlayType.TRIPLE_STRAIGHT,
+				type: PlayType.AIRPLANE,
 				value: Hand.getCardValue(sorted[0]),
 			};
 		}
@@ -386,32 +378,24 @@ export class Game {
 		return undefined;
 	}
 
-	private static countRanks(cards: Card[]): Record<string, number> {
-		const counts: Record<string, number> = {};
+	private static countRanks(cards: Card[]): Record<number, number> {
+		const counts: Record<number, number> = {};
 		for (const card of cards) {
-			const key =
-				card.type === "Joker"
-					? `joker_${card.color}`
-					: String(card.rank);
-			counts[key] = (counts[key] || 0) + 1;
+			counts[card.rank] = (counts[card.rank] || 0) + 1;
 		}
 		return counts;
 	}
 
-	private static isStraight(sorted: Card[], groupSize: number): boolean {
-		if (sorted.length % groupSize !== 0) return false;
+	private static isStraight(sorted: Card[], groupSize: number): number {
+		if (sorted.length % groupSize !== 0) return 0;
 
 		for (const card of sorted) {
-			if (card.type !== "Playing") return false;
-			if (card.rank === 2) return false;
+			if (card.rank === 2) return 0;
 		}
 
-		// Now TypeScript knows all cards are Playing cards
-		const playingCards = sorted as Extract<Card, { type: "Playing" }>[];
-
-		const numberGroups = playingCards.length / groupSize;
+		const numberGroups = sorted.length / groupSize;
 		for (let index = 0; index < numberGroups; index++) {
-			const groupCards = playingCards.slice(
+			const groupCards = sorted.slice(
 				index * groupSize,
 				(index + 1) * groupSize,
 			);
@@ -419,30 +403,58 @@ export class Game {
 			const firstCard = groupCards[0];
 
 			for (const card of groupCards)
-				if (card.rank !== firstCard.rank) return false;
+				if (card.rank !== firstCard.rank) return 0;
 
 			if (index > 0) {
-				const previousCard = playingCards[(index - 1) * groupSize];
-				const expectedValue =
-					Game.getStraightRankValue(previousCard) + 1;
-				const actualValue = Game.getStraightRankValue(firstCard);
+				const previousCard = sorted[(index - 1) * groupSize];
+				const expectedValue = Hand.getCardValue(previousCard);
+				const actualValue = Hand.getCardValue(firstCard);
 
-				if (actualValue !== expectedValue) return false;
+				if (actualValue !== expectedValue - 1) return 0;
 			}
 		}
 
-		return numberGroups >= (groupSize === 1 ? 5 : groupSize === 2 ? 3 : 2);
+		return numberGroups >= (groupSize === 1 ? 5 : groupSize === 2 ? 3 : 2)
+			? numberGroups
+			: 0;
 	}
 
-	private static getStraightRankValue(
-		card: Extract<Card, { type: "Playing" }>,
-	): number {
-		return card.rank === 1 ? 14 : card.rank;
+	static isAirplane(
+		cards: Card[],
+		rankCounts: Record<number, number>,
+	): boolean {
+		// find all of the ones with length 3, separate it out and plug into isStraight
+		let triples: Card[] = [];
+		for (const rank in rankCounts) {
+			if (rankCounts[rank] === 3) {
+				triples.push(...cards.filter((c) => c.rank === Number(rank)));
+			}
+		}
+
+		if (!Game.isStraight(triples, 3)) return false;
+
+		// if number of ranks is not 2 or the other rank is not 1 or 2
+		if (
+			Object.keys(rankCounts).length !== 2 ||
+			!Object.values(rankCounts).some(
+				(count) => count === 1 || count === 2,
+			)
+		) {
+			return false;
+		}
+
+		return false;
 	}
 
 	static canBeat(play: Play, lastPlay: Play): boolean {
-		// Rocket beats everything
-		if (play.type === PlayType.ROCKET) return true;
+		// Big Rocket beats everything
+		if (play.type === PlayType.BIG_ROCKET) return true;
+
+		// Rocket beats everything except Big Rocket
+		if (play.type === PlayType.ROCKET) {
+			if (lastPlay.type === PlayType.BIG_ROCKET) return false;
+			return true;
+		}
 
 		// Bomb beats everything except Rocket and higher Bombs
 		if (play.type === PlayType.BOMB) {
@@ -476,12 +488,12 @@ export enum PlayType {
 	STRAIGHT = "straight",
 	PAIR_STRAIGHT = "pair_straight",
 	TRIPLE_STRAIGHT = "triple_straight",
-	AIRPLANE_WITH_SINGLES = "airplane_with_singles",
-	AIRPLANE_WITH_PAIRS = "airplane_with_pairs",
+	AIRPLANE = "airplane",
 	QUAD_WITH_SINGLES = "quad_with_singles",
 	QUAD_WITH_PAIRS = "quad_with_pairs",
 	BOMB = "bomb",
 	ROCKET = "rocket",
+	BIG_ROCKET = "big_rocket",
 }
 
 export interface Play {
@@ -507,13 +519,10 @@ export class Hand {
 	}
 
 	static getCardValue(card: Card): number {
-		switch (card.type) {
-			case "Joker": {
-				return card.color === "BLACK" ? 53 : 54;
-			}
-			case "Playing": {
-				return card.rank === 2 ? 20 : card.rank === 1 ? 14 : card.rank;
-			}
+		if (card.rank === 14) {
+			return card.suit === "Black Joker" ? 53 : 54;
+		} else {
+			return card.rank === 2 ? 20 : card.rank === 1 ? 14 : card.rank;
 		}
 	}
 
@@ -527,11 +536,7 @@ export class Hand {
 	static cardsEqual(a: Card, b: Card): boolean {
 		if (a.uid !== undefined || b.uid !== undefined) return a.uid === b.uid;
 
-		if (a.type === "Joker" && b.type === "Joker")
-			return a.color === b.color;
-
-		if (a.type === "Playing" && b.type === "Playing")
-			return a.suit === b.suit && a.rank === b.rank;
+		return a.suit === b.suit && a.rank === b.rank;
 
 		return false;
 	}

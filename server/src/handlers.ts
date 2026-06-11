@@ -1,5 +1,5 @@
 import type { Server } from "socket.io";
-import type { Card } from "@shared/card";
+import { cardToString, type Card } from "@shared/card";
 import { GamePhase, PlayType } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
 import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
@@ -217,29 +217,7 @@ function applyRoundScore(room: Room, landlordWon: boolean): void {
 
 function formatCards(cards: Card[]): string {
 	if (cards.length === 0) return "none";
-	return cards.map(formatCard).join(", ");
-}
-
-function formatCard(card: Card): string {
-	if (card.type === "Joker") {
-		return card.color === "RED" ? "Red Joker" : "Black Joker";
-	}
-
-	const rankMap: Record<number, string> = {
-		1: "A",
-		11: "J",
-		12: "Q",
-		13: "K",
-	};
-	const suitMap: Record<string, string> = {
-		h: "♥",
-		d: "♦",
-		c: "♣",
-		s: "♠",
-	};
-	const rank = rankMap[card.rank] ?? String(card.rank);
-	const suit = suitMap[card.suit] ?? "";
-	return `${rank}${suit}`;
+	return cards.map(cardToString).join(", ");
 }
 
 function emitStartedRoom(room: Room): void {
