@@ -1,31 +1,17 @@
-// Jokers are 20 Rank, other cards are 3-13 (3-10, J=11, Q=12, K=13, A=14, 2=16)
+export type Suit = "h" | "d" | "c" | "s";
+export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
 
-export type Suit = "h" | "d" | "c" | "s" | "Red Joker" | "Black Joker";
-export const TWO_RANK: number = 16;
-export const JOKER_RANK: number = 20;
-
-export type Card = {
+export type Playing = {
+	type: "Playing";
 	suit: Suit;
-	rank: number;
+	rank: Rank;
 	uid?: string;
 };
 
-export function cardToString(card: Card): string {
-	if (card.rank === JOKER_RANK) return card.suit;
+export type Joker = {
+	type: "Joker";
+	color: "RED" | "BLACK";
+	uid?: string;
+};
 
-	const rankMap: Record<number, string> = {
-		1: "A",
-		11: "J",
-		12: "Q",
-		13: "K",
-	};
-	const suitMap: Record<string, string> = {
-		h: "♥",
-		d: "♦",
-		c: "♣",
-		s: "♠",
-	};
-	const rank = rankMap[card.rank] ?? String(card.rank);
-	const suit = suitMap[card.suit] ?? "";
-	return `${rank}${suit}`;
-}
+export type Card = Playing | Joker;

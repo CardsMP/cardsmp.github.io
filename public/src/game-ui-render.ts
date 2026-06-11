@@ -1,4 +1,4 @@
-import { cardToString, type Card } from "@shared/card";
+import type { Card } from "@shared/card";
 import type { Player } from "@shared/player";
 import { GamePhase } from "@shared/game";
 import { MAX_ROOM_PLAYERS } from "@shared/room";
@@ -8,6 +8,7 @@ import {
 	clearGameArea,
 	escapeHtml,
 	formatPlayType,
+	getCardDisplay,
 	getCardImagePath,
 	makeBtn,
 } from "./game-ui-utils";
@@ -287,16 +288,17 @@ export function renderCardHand(): void {
 
 	for (const [index, card] of myPlayer.hand.cards.entries()) {
 		const el = document.createElement("div");
+		const { label } = getCardDisplay(card);
 		const cardKey = getCardKey(card);
 		el.className = "hand-card";
-		el.setAttribute("aria-label", cardToString(card));
+		el.setAttribute("aria-label", label);
 
 		if (selectedCardKeys.has(cardKey)) el.classList.add("selected");
 
 		const img = document.createElement("img");
 		img.className = "hand-card-face";
 		img.src = getCardImagePath(card);
-		img.alt = cardToString(card);
+		img.alt = label;
 		img.draggable = false;
 		el.append(img);
 
@@ -317,9 +319,10 @@ export function renderCardHand(): void {
 
 function createTableCardImage(card: Card): HTMLImageElement {
 	const img = document.createElement("img");
+	const { label } = getCardDisplay(card);
 	img.className = "table-card-img";
 	img.src = getCardImagePath(card);
-	img.alt = cardToString(card);
+	img.alt = label;
 	img.draggable = false;
 	return img;
 }
@@ -337,14 +340,9 @@ function renderActionButtons(): void {
 	switch (game.phase) {
 		case GamePhase.FINISHED: {
 			const playerCount = gs.room.players.size;
-			const needsPlayers =
-				playerCount < 3 || playerCount > MAX_ROOM_PLAYERS;
+			const needsPlayers = playerCount < 3 || playerCount > MAX_ROOM_PLAYERS;
 			if (needsPlayers) {
-				const needsPlayersBtn = makeBtn(
-					"Need 3-4 Players",
-					"",
-					() => {},
-				);
+				const needsPlayersBtn = makeBtn("Need 3-4 Players", "", () => {});
 				needsPlayersBtn.disabled = true;
 				container.append(needsPlayersBtn);
 			} else {

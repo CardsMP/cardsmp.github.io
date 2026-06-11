@@ -1,4 +1,4 @@
-import { JOKER_RANK, type Card } from "@shared/card";
+import type { Card } from "@shared/card";
 import { selectedCardKeys } from "./game-ui-state";
 
 export function clearGameArea(): void {
@@ -50,24 +50,60 @@ export function formatPlayType(type: string): string {
 	return typeNames[type] || type;
 }
 
-export function getCardImagePath(card: Card): string {
-	if (card.suit === "Red Joker") return "/cards/Joker1.png";
-	if (card.suit === "Black Joker") return "/cards/Joker2.png";
+export function getCardDisplay(card: Card): {
+	rank: string;
+	suit: string;
+	isRed: boolean;
+	label: string;
+} {
+	if (card.type === "Joker") {
+		const isRed = card.color === "RED";
+		return {
+			rank: isRed ? "🃟" : "🃏",
+			suit: isRed ? "Red" : "Blk",
+			isRed,
+			label: isRed ? "Red Joker" : "Black Joker",
+		};
+	}
 
-	const suitMap: Record<string, string> = {
-		h: "hearts",
-		d: "diamonds",
-		c: "clubs",
-		s: "spades",
-	};
 	const rankMap: Record<number, string> = {
-		1: "ace",
-		11: "jack",
-		12: "queen",
-		13: "king",
+		1: "A",
+		11: "J",
+		12: "Q",
+		13: "K",
 	};
-	const rank = rankMap[card.rank] || String(card.rank).padStart(2, "0");
-	return `/cards/${suitMap[card.suit]}_${rank}.png`;
+	const suitMap: Record<string, string> = { h: "♥", d: "♦", c: "♣", s: "♠" };
+	const isRed = card.suit === "h" || card.suit === "d";
+
+	const rank = rankMap[card.rank] ?? String(card.rank);
+	const suit = suitMap[card.suit] ?? "";
+
+	return { rank, suit, isRed, label: `${rank}${suit}` };
+}
+
+export function getCardImagePath(card: Card): string {
+	if (card.type === "Joker") {
+		return card.color === "RED" ? "/cards/Joker1.png" : "/cards/Joker2.png";
+	}
+
+	if (card.type === "Playing") {
+		const suitMap: Record<string, string> = {
+			h: "hearts",
+			d: "diamonds",
+			c: "clubs",
+			s: "spades",
+		};
+		const rankMap: Record<number, string> = {
+			1: "ace",
+			11: "jack",
+			12: "queen",
+			13: "king",
+		};
+		const rank = rankMap[card.rank] || String(card.rank).padStart(2, "0");
+		return `/cards/${suitMap[card.suit]}_${rank}.png`;
+	}
+
+	return "/cards/back01.png";
 }
 
 export function makeBtn(
