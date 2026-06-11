@@ -67,6 +67,24 @@ export function setupHandlers(socket: GameSocket): void {
 		emitStartedRoom(socket.room);
 	});
 
+	socket.on("reset-room", () => {
+		if (
+			!socket.room ||
+			socket.room.game.phase !== GamePhase.FINISHED ||
+			socket.room.status !== RoomStatus.LOBBY
+		)
+			return;
+
+		if (!socket.room.tryStartRoom()) {
+			socket.emit("error", "Need 3 or 4 players to start");
+			return;
+		}
+
+		broadcastSystemChat(socket.room, "A new round is starting.");
+		emitStartedRoom(socket.room);
+		emitRoomList();
+	});
+
 	socket.on("bet-landlord", (bet: number) => {
 		if (
 			!socket.room ||
@@ -97,12 +115,17 @@ export function setupHandlers(socket: GameSocket): void {
 
 		if (result) {
 			const landlordId = socket.room.game.landlord?.id;
+			const bottom = [...socket.room.game.bottom];
+			broadcastSystemChat(
+				socket.room,
+				`Bottom cards: ${formatCards(bottom)}.`,
+			);
 			io.to(socket.room.code).emit(
 				"p-became-landlord",
 				landlordId,
-				socket.room.game.bottom,
+				bottom,
 			);
-			socket.room.game.becomeLandlord();
+			socket.room.game.becomeLandlord(bottom);
 		}
 	});
 
@@ -151,6 +174,7 @@ export function setupHandlers(socket: GameSocket): void {
 				? "Landlord victory!"
 				: "Farmers victory!";
 
+			applyRoundScore(socket.room, isLandlord);
 			io.to(socket.room.code).emit("ended-room", reason);
 			socket.room.endRoom();
 		}
@@ -170,6 +194,52 @@ export function setupHandlers(socket: GameSocket): void {
 function broadcastSystemChat(room: Room, message: string): void {
 	room.chat.push("server", message);
 	io.to(room.code).emit("p-sent-chat", "server", message);
+}
+
+function applyRoundScore(room: Room, landlordWon: boolean): void {
+	const roundScore = Math.max(1, room.game.bet);
+	const landlordId = room.game.landlord?.id;
+
+	for (const player of room.players.values()) {
+		const won = landlordWon
+			? player.id === landlordId
+			: player.id !== landlordId;
+		if (!won) continue;
+
+		player.score += roundScore;
+
+		const gamePlayer = room.game.players.find((p) => p.id === player.id);
+		if (gamePlayer) gamePlayer.score = player.score;
+
+		io.to(room.code).emit("p-score-updated", player.id, player.score);
+	}
+}
+
+function formatCards(cards: Card[]): string {
+	if (cards.length === 0) return "none";
+	return cards.map(formatCard).join(", ");
+}
+
+function formatCard(card: Card): string {
+	if (card.type === "Joker") {
+		return card.color === "RED" ? "Red Joker" : "Black Joker";
+	}
+
+	const rankMap: Record<number, string> = {
+		1: "A",
+		11: "J",
+		12: "Q",
+		13: "K",
+	};
+	const suitMap: Record<string, string> = {
+		h: "♥",
+		d: "♦",
+		c: "♣",
+		s: "♠",
+	};
+	const rank = rankMap[card.rank] ?? String(card.rank);
+	const suit = suitMap[card.suit] ?? "";
+	return `${rank}${suit}`;
 }
 
 function emitStartedRoom(room: Room): void {

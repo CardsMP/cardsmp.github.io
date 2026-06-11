@@ -91,6 +91,12 @@ export function initGameSocket(): void {
 		updateUIGame();
 	});
 
+	gs.socket.on("p-score-updated", (id: string, score: number) => {
+		applyScoreUpdate(id, score);
+		updateUIPlayerList();
+		updateUIGame();
+	});
+
 	gs.socket.on("ended-room", (reason: string) => {
 		gs.room.endRoom();
 		endGameUI();
@@ -104,4 +110,14 @@ export function initGameSocket(): void {
 		gs.room.chat.push(id, message);
 		updateUIPushChat({ id, message });
 	});
+}
+
+function applyScoreUpdate(id: string, score: number): void {
+	const roomPlayer = gs.room.players.get(id);
+	if (roomPlayer) roomPlayer.score = score;
+
+	const gamePlayer = gs.room.game.players.find((player) => player.id === id);
+	if (gamePlayer) gamePlayer.score = score;
+
+	if (gs.player.id === id) gs.player.score = score;
 }

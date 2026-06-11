@@ -3,7 +3,8 @@ import type { SerializedPlayer } from "./player";
 import { Player } from "./player";
 
 const PLAYERS_PER_ROOM = 4;
-const CARDS_PER_PLAYER = 13;
+const THREE_PLAYER_CARDS_PER_PLAYER = 17;
+const FOUR_PLAYER_CARDS_PER_PLAYER = 25;
 const PLAYING_SUITS: Suit[] = ["h", "d", "c", "s"];
 const PLAYING_RANKS: Rank[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
@@ -130,7 +131,9 @@ export class Game {
 	private dealCards(): void {
 		const isFourPlayerGame = this.players.length === PLAYERS_PER_ROOM;
 		const bottomCardCount = isFourPlayerGame ? 4 : 3;
-		const cardsPerPlayer = isFourPlayerGame ? CARDS_PER_PLAYER : 17;
+		const cardsPerPlayer = isFourPlayerGame
+			? FOUR_PLAYER_CARDS_PER_PLAYER
+			: THREE_PLAYER_CARDS_PER_PLAYER;
 		let cardIndex = bottomCardCount;
 		const bottomCards = this.bottom.slice(0, bottomCardCount);
 

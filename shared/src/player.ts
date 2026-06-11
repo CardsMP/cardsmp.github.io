@@ -12,6 +12,7 @@ export interface SerializedPlayer {
    hand: Card[];
    status: PlayerStatus;
    gameIndex?: number;
+   score: number;
 }
 
 export class Player {
@@ -20,6 +21,7 @@ export class Player {
    hand: Hand;
    status: PlayerStatus;
    index: number | undefined;
+   score: number;
 
    constructor(id: string, name?: string) {
       this.id = id;
@@ -27,6 +29,7 @@ export class Player {
       this.hand = new Hand([]);
       this.status = PlayerStatus.NOT_READY;
       this.index = undefined;
+      this.score = 0;
    }
 
    serialize(): SerializedPlayer {
@@ -36,6 +39,7 @@ export class Player {
          hand: this.hand.cards,
          status: this.status,
          gameIndex: this.index,
+         score: this.score,
       };
    }
 
@@ -44,6 +48,7 @@ export class Player {
       player.hand = new Hand(data.hand);
       player.status = data.status;
       player.index = data.gameIndex;
+      player.score = data.score ?? 0;
       return player;
    }
 }

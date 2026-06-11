@@ -17,10 +17,6 @@ function isPlayersTurn(): boolean {
 	return gs.player.index === gs.room.game.currentIndex;
 }
 
-function isHost(): boolean {
-	return [...gs.room.players.keys()][0] === gs.player.id;
-}
-
 function canPass(): boolean {
 	const game = gs.room.game;
 	return (
@@ -63,7 +59,7 @@ export function updateUIPlayerList(): void {
 
 		const isLandlord = gs.room.game.landlord?.id === player.id;
 		const isYou = player.id === gs.player.id;
-		const score = 0;
+		const score = player.score ?? 0;
 
 		div.innerHTML = `
 			<div class="player-name">${escapeHtml(player.name || "?")}${isYou ? " (You)" : ""}${isLandlord ? '<span class="landlord-indicator">L</span>' : ""}</div>
@@ -242,7 +238,7 @@ function renderTableMessage(): void {
 		msg.append(title, cards, footer);
 	} else if (game.phase === GamePhase.FINISHED) {
 		msg.classList.remove("is-empty");
-		msg.textContent = "Waiting for the host to start.";
+		msg.textContent = "Round over. Anyone can reset to start a new round.";
 	} else {
 		msg.classList.add("is-empty");
 		msg.replaceChildren();
@@ -349,15 +345,11 @@ function renderActionButtons(): void {
 				const needsPlayersBtn = makeBtn("Need 3-4 Players", "", () => {});
 				needsPlayersBtn.disabled = true;
 				container.append(needsPlayersBtn);
-			} else if (isHost()) {
-				const startBtn = makeBtn("Start Game", "", () =>
-					gs.socket.emit("start-room"),
-				);
-				container.append(startBtn);
 			} else {
-				const waitingBtn = makeBtn("Waiting for host...", "", () => {});
-				waitingBtn.disabled = true;
-				container.append(waitingBtn);
+				const resetBtn = makeBtn("Reset Round", "", () =>
+					gs.socket.emit("reset-room"),
+				);
+				container.append(resetBtn);
 			}
 			break;
 		}
