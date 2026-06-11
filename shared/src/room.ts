@@ -39,15 +39,15 @@ export class Room {
 		this.chat = new Chat();
 	}
 
-	serialize(viewerIndex?: number): SerializedRoom {
+	serialize(viewerId?: string): SerializedRoom {
 		const serializedPlayers: Record<string, SerializedPlayer> = {};
 		for (const [id, player] of this.players.entries())
-			serializedPlayers[id] = player.serialize();
+			serializedPlayers[id] = player.serialize(viewerId);
 
 		return {
 			code: this.code,
 			status: this.status,
-			game: this.game.serialize(viewerIndex),
+			game: this.game.serialize(viewerId),
 			chat: this.chat.serialize(),
 			players: serializedPlayers,
 		};
@@ -121,6 +121,7 @@ export class Room {
 			} else {
 				player.status = PlayerStatus.NOT_READY;
 				player.hand = new Hand([]);
+				player.handCount = 0;
 				player.index = undefined; // Clear game position
 			}
 		}

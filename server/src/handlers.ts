@@ -51,22 +51,6 @@ export function setupHandlers(socket: GameSocket): void {
 		handlePlayerLeave(socket);
 	});
 
-	socket.on("start-room", () => {
-		if (!socket.room || socket.room.status === RoomStatus.PLAYING) return;
-
-		if (!socket.room.isHost(socket.player.id)) {
-			socket.emit("error", "Only the host can start the game");
-			return;
-		}
-
-		if (!socket.room.tryStartRoom()) {
-			socket.emit("error", `Need 3 or 4 players to start`);
-			return;
-		}
-
-		emitStartedRoom(socket.room);
-	});
-
 	socket.on("reset-room", () => {
 		if (
 			!socket.room ||
@@ -76,11 +60,11 @@ export function setupHandlers(socket: GameSocket): void {
 			return;
 
 		if (!socket.room.tryStartRoom()) {
-			socket.emit("error", "Need 3 or 4 players to start");
+			socket.emit("error", "Need 3 or 4 players to reset");
 			return;
 		}
 
-		broadcastSystemChat(socket.room, "A new round is starting.");
+		broadcastSystemChat(socket.room, "Round reset.");
 		emitStartedRoom(socket.room);
 		emitRoomList();
 	});
@@ -227,10 +211,7 @@ function emitStartedRoom(room: Room): void {
 		);
 
 		if (playerSocket)
-			playerSocket.emit(
-				"started-room",
-				room.game.serialize(player.index),
-			);
+			playerSocket.emit("started-room", room.game.serialize(player.id));
 	}
 }
 
@@ -259,7 +240,7 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 	if (playerInRoom) {
 		socket.player.name = playerInRoom.name;
 		playerInRoom.status = PlayerStatus.NOT_READY;
-		socket.emit("joined-room", room.serialize(socket.player.index));
+		socket.emit("joined-room", room.serialize(socket.player.id));
 		socket
 			.to(socket.room.code)
 			.emit("p-set-status", socket.player.id, PlayerStatus.NOT_READY);
@@ -276,7 +257,7 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 			socket.player.id,
 			socket.player.name,
 		);
-		socket.emit("joined-room", room.serialize(socket.player.index));
+		socket.emit("joined-room", room.serialize(socket.player.id));
 	}
 }
 

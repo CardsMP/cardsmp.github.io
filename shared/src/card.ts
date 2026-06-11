@@ -14,10 +14,13 @@ export function cardToString(card: Card): string {
 	if (card.rank === JOKER_RANK) return card.suit;
 
 	const rankMap: Record<number, string> = {
-		1: "A",
+		14: "A",
+		[1]: "A",
 		11: "J",
 		12: "Q",
 		13: "K",
+		[TWO_RANK]: "2",
+		2: "2",
 	};
 	const suitMap: Record<string, string> = {
 		h: "♥",

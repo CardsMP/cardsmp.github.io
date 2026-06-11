@@ -1,4 +1,4 @@
-import { JOKER_RANK, type Card } from "@shared/card";
+import { JOKER_RANK, TWO_RANK, type Card } from "@shared/card";
 import { selectedCardKeys } from "./game-ui-state";
 
 export function clearGameArea(): void {
@@ -61,10 +61,13 @@ export function getCardImagePath(card: Card): string {
 		s: "spades",
 	};
 	const rankMap: Record<number, string> = {
+		14: "ace",
 		1: "ace",
 		11: "jack",
 		12: "queen",
 		13: "king",
+		[TWO_RANK]: "02",
+		2: "02",
 	};
 	const rank = rankMap[card.rank] || String(card.rank).padStart(2, "0");
 	return `/cards/${suitMap[card.suit]}_${rank}.png`;

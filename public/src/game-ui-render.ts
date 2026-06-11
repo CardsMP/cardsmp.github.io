@@ -95,7 +95,7 @@ function renderNameplates(): void {
 			const isTurn =
 				game?.players?.length > 0 && game.currentIndex === player.index;
 			const isLandlord = game.landlord?.id === player.id;
-			const cardCount = player.hand.cards.length;
+			const cardCount = player.handCount ?? player.hand.cards.length;
 			const seat = player.index ?? rel;
 			const name = player.name || `P${seat + 1}`;
 			const hasDetail = game?.players?.length > 0;
@@ -237,7 +237,7 @@ function renderTableMessage(): void {
 		msg.append(title, cards, footer);
 	} else if (game.phase === GamePhase.FINISHED) {
 		msg.classList.remove("is-empty");
-		msg.textContent = "Round over. Anyone can reset to start a new round.";
+		msg.textContent = "Round over. Anyone can reset the round.";
 	} else {
 		msg.classList.add("is-empty");
 		msg.replaceChildren();
@@ -341,14 +341,14 @@ function renderActionButtons(): void {
 				playerCount < 3 || playerCount > MAX_ROOM_PLAYERS;
 			if (needsPlayers) {
 				const needsPlayersBtn = makeBtn(
-					"Need 3-4 Players",
+					"Need 3-4 Players to Reset",
 					"",
 					() => {},
 				);
 				needsPlayersBtn.disabled = true;
 				container.append(needsPlayersBtn);
 			} else {
-				const resetBtn = makeBtn("Reset Round", "", () =>
+				const resetBtn = makeBtn("Start New Round", "", () =>
 					gs.socket.emit("reset-room"),
 				);
 				container.append(resetBtn);

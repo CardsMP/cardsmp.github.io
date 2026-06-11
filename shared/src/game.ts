@@ -1,12 +1,14 @@
-import { JOKER_RANK, type Card, type Suit } from "./card";
+import { JOKER_RANK, TWO_RANK, type Card, type Suit } from "./card";
 import type { SerializedPlayer } from "./player";
 import { Player } from "./player";
 
 const PLAYERS_FOR_DOUBLE_DECK = 4;
 const THREE_PLAYER_CARDS_PER_PLAYER = 17;
 const FOUR_PLAYER_CARDS_PER_PLAYER = 25;
+const THREE_PLAYER_BOTTOM_COUNT = 3;
+const FOUR_PLAYER_BOTTOM_COUNT = 8;
 const PLAYING_SUITS: Suit[] = ["h", "d", "c", "s"];
-const PLAYING_RANKS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+const PLAYING_RANKS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, TWO_RANK];
 
 export interface SerializedGame {
 	bottom: Card[];
@@ -31,14 +33,18 @@ export class Game {
 
 	constructor() {}
 
-	serialize(toIndex?: number): SerializedGame {
+	get isDoubleDeck(): boolean {
+		return this.players.length === PLAYERS_FOR_DOUBLE_DECK;
+	}
+
+	serialize(viewerId?: string): SerializedGame {
 		return {
 			bottom: this.bottom,
 			biddingTurns: this.biddingTurns,
 			currentIndex: this.currentIndex,
 			lastPlay: this.lastPlay,
 			phase: this.phase,
-			players: this.players.map((player) => player.serialize()),
+			players: this.players.map((player) => player.serialize(viewerId)),
 			bet: this.bet,
 			landlordIndex: this.landlordIndex,
 		};
@@ -87,8 +93,7 @@ export class Game {
 	// Server Only
 	private initializeDeck(): void {
 		this.bottom = [];
-		const deckCount =
-			this.players.length === PLAYERS_FOR_DOUBLE_DECK ? 2 : 1;
+		const deckCount = this.isDoubleDeck ? 2 : 1;
 
 		for (let deckIndex = 0; deckIndex < deckCount; deckIndex++) {
 			for (const suit of PLAYING_SUITS) {
@@ -129,10 +134,10 @@ export class Game {
 
 	// Server Only
 	private dealCards(): void {
-		const isFourPlayerGame =
-			this.players.length === PLAYERS_FOR_DOUBLE_DECK;
-		const bottomCardCount = isFourPlayerGame ? 4 : 3;
-		const cardsPerPlayer = isFourPlayerGame
+		const bottomCardCount = this.isDoubleDeck
+			? FOUR_PLAYER_BOTTOM_COUNT
+			: THREE_PLAYER_BOTTOM_COUNT;
+		const cardsPerPlayer = this.isDoubleDeck
 			? FOUR_PLAYER_CARDS_PER_PLAYER
 			: THREE_PLAYER_CARDS_PER_PLAYER;
 		let cardIndex = bottomCardCount;
@@ -144,7 +149,10 @@ export class Game {
 				player.hand.cards.push(this.bottom[cardIndex++]);
 		}
 
-		for (const player of this.players) player.hand.sort();
+		for (const player of this.players) {
+			player.hand.sort();
+			player.handCount = player.hand.cards.length;
+		}
 		this.bottom = bottomCards;
 	}
 
@@ -185,6 +193,7 @@ export class Game {
 
 		player.hand.cards.push(...bottom);
 		player.hand.sort();
+		player.handCount = player.hand.cards.length;
 
 		this.bottom = [];
 		this.phase = GamePhase.PLAYING;
@@ -201,8 +210,12 @@ export class Game {
 
 		if (!check) {
 			if (cards.length > 0) {
-				const playType = Game.validatePlayType(cards);
+				const playType = Game.validatePlayType(
+					cards,
+					this.isDoubleDeck,
+				);
 				player.hand.remove(cards, false);
+				player.handCount = player.hand.cards.length;
 				this.lastPlay = {
 					cards,
 					type: playType?.type ?? PlayType.SOLO,
@@ -222,7 +235,7 @@ export class Game {
 		}
 
 		if (cards.length > 0) {
-			const playType = Game.validatePlayType(cards);
+			const playType = Game.validatePlayType(cards, this.isDoubleDeck);
 			if (!playType) return undefined;
 
 			const play = {
@@ -236,6 +249,7 @@ export class Game {
 				return undefined;
 
 			player.hand.remove(cards, check);
+			player.handCount = player.hand.cards.length;
 			this.lastPlay = play;
 
 			if (player.hand.cards.length === 0) {
@@ -244,7 +258,6 @@ export class Game {
 			}
 		}
 
-		// Move to next player logic
 		this.currentIndex = (this.currentIndex + 1) % this.players.length;
 
 		if (this.lastPlay && this.lastPlay.playerIndex === this.currentIndex)
@@ -255,6 +268,7 @@ export class Game {
 
 	static validatePlayType(
 		cards: Card[],
+		doubleDeck = false,
 	): { type: PlayType; value: number } | undefined {
 		if (cards.length === 0) return undefined;
 
@@ -262,53 +276,54 @@ export class Game {
 			(a, b) => Hand.getCardValue(a) - Hand.getCardValue(b),
 		);
 
-		// Big Rocket: 4 Jokers
-		if (sorted.length === 4 && sorted.every((c) => c.rank === JOKER_RANK)) {
-			return {
-				type: PlayType.BIG_ROCKET,
-				value: 1001,
-			};
+		// 4-player rocket: all four jokers
+		if (
+			doubleDeck &&
+			sorted.length === 4 &&
+			sorted.every((c) => c.rank === JOKER_RANK)
+		) {
+			return { type: PlayType.BIG_ROCKET, value: 1001 };
 		}
 
-		// Rocket: Both Jokers
+		// 3-player rocket: one black joker + one red joker
 		if (
+			!doubleDeck &&
 			sorted.length === 2 &&
-			sorted[0].rank === 14 &&
-			sorted[1].rank === 14 &&
+			sorted[0].rank === JOKER_RANK &&
+			sorted[1].rank === JOKER_RANK &&
 			sorted[0].suit !== sorted[1].suit
 		) {
-			return {
-				type: PlayType.ROCKET,
-				value: 1000,
-			};
+			return { type: PlayType.ROCKET, value: 1000 };
 		}
 
 		const rankCounts = Game.countRanks(sorted);
 		const counts = Object.values(rankCounts);
 		const uniqueRanks = Object.keys(rankCounts).map(Number);
 
-		// Bombs (bigger bombs beat smaller ones, higher ranks beat lower ranks):
-		if (sorted.length === 8 && counts.length === 1 && counts[0] === 8) {
+		// Bomb: 4-of-kind in 3-player; 4-or-more-of-kind in 4-player.
+		// More cards always beats fewer cards regardless of rank, so value scales by length first.
+		const minBombSize = 4;
+		const maxBombSize = doubleDeck ? 8 : 4;
+		if (
+			counts.length === 1 &&
+			sorted.length >= minBombSize &&
+			sorted.length <= maxBombSize &&
+			sorted.length % 1 === 0
+		) {
 			return {
 				type: PlayType.BOMB,
-				value: sorted.length * 20 + Hand.getCardValue(sorted[0]),
+				value: sorted.length * 1000 + Hand.getCardValue(sorted[0]),
 			};
 		}
 
 		// Solo
 		if (sorted.length === 1) {
-			return {
-				type: PlayType.SOLO,
-				value: Hand.getCardValue(sorted[0]),
-			};
+			return { type: PlayType.SOLO, value: Hand.getCardValue(sorted[0]) };
 		}
 
-		// Pair
+		// Pair (including matched joker pairs in 4-player)
 		if (sorted.length === 2 && counts.length === 1 && counts[0] === 2) {
-			return {
-				type: PlayType.PAIR,
-				value: Hand.getCardValue(sorted[0]),
-			};
+			return { type: PlayType.PAIR, value: Hand.getCardValue(sorted[0]) };
 		}
 
 		// Triple
@@ -319,8 +334,9 @@ export class Game {
 			};
 		}
 
-		// Triple with single
+		// Triple with single (3-player only)
 		if (
+			!doubleDeck &&
 			sorted.length === 4 &&
 			counts.length === 2 &&
 			counts.includes(3) &&
@@ -329,7 +345,9 @@ export class Game {
 			const tripleRank = uniqueRanks.find((r) => rankCounts[r] === 3)!;
 			return {
 				type: PlayType.TRIPLE_WITH_SINGLE,
-				value: Hand.getCardValue(sorted.find((c) => c.rank === tripleRank)!),
+				value: Hand.getCardValue(
+					sorted.find((c) => c.rank === tripleRank)!,
+				),
 			};
 		}
 
@@ -343,11 +361,47 @@ export class Game {
 			const tripleRank = uniqueRanks.find((r) => rankCounts[r] === 3)!;
 			return {
 				type: PlayType.TRIPLE_WITH_PAIR,
-				value: Hand.getCardValue(sorted.find((c) => c.rank === tripleRank)!),
+				value: Hand.getCardValue(
+					sorted.find((c) => c.rank === tripleRank)!,
+				),
 			};
 		}
 
-		// Straight: 5+ consecutive cards
+		// Quad with 2 singles (3-player only): one quad + exactly 2 singles of different ranks
+		if (
+			!doubleDeck &&
+			sorted.length === 6 &&
+			counts.includes(4) &&
+			counts.length === 3 &&
+			counts.filter((c) => c === 1).length === 2
+		) {
+			const quadRank = uniqueRanks.find((r) => rankCounts[r] === 4)!;
+			return {
+				type: PlayType.QUAD_WITH_SINGLES,
+				value: Hand.getCardValue(
+					sorted.find((c) => c.rank === quadRank)!,
+				),
+			};
+		}
+
+		// Quad with 2 pairs (3-player only): one quad + exactly 2 pairs of different ranks
+		if (
+			!doubleDeck &&
+			sorted.length === 8 &&
+			counts.includes(4) &&
+			counts.length === 3 &&
+			counts.filter((c) => c === 2).length === 2
+		) {
+			const quadRank = uniqueRanks.find((r) => rankCounts[r] === 4)!;
+			return {
+				type: PlayType.QUAD_WITH_PAIRS,
+				value: Hand.getCardValue(
+					sorted.find((c) => c.rank === quadRank)!,
+				),
+			};
+		}
+
+		// Straight: 5+ consecutive singles (no 2s or jokers)
 		if (sorted.length >= 5 && Game.isStraight(sorted, 1)) {
 			return {
 				type: PlayType.STRAIGHT,
@@ -355,7 +409,7 @@ export class Game {
 			};
 		}
 
-		// Pair straight: 3+ consecutive pairs
+		// Pair straight: 3+ consecutive pairs (no 2s or jokers)
 		if (
 			sorted.length >= 6 &&
 			sorted.length % 2 === 0 &&
@@ -367,13 +421,26 @@ export class Game {
 			};
 		}
 
-		// Airplane
-		if (Game.isAirplane(sorted, rankCounts)) {
+		// Triple straight: 2+ consecutive triples, no attachments
+		if (
+			sorted.length >= 6 &&
+			sorted.length % 3 === 0 &&
+			counts.every((c) => c === 3) &&
+			Game.isStraight(sorted, 3)
+		) {
 			return {
-				type: PlayType.AIRPLANE,
+				type: PlayType.TRIPLE_STRAIGHT,
 				value: Hand.getCardValue(sorted[0]),
 			};
 		}
+
+		// Airplane: 2+ consecutive triples with attached singles (3-player only) or pairs
+		const airplaneResult = Game.validateAirplane(
+			sorted,
+			rankCounts,
+			doubleDeck,
+		);
+		if (airplaneResult) return airplaneResult;
 
 		return undefined;
 	}
@@ -386,11 +453,17 @@ export class Game {
 		return counts;
 	}
 
+	// Cards are sorted ascending, so each successive group must be exactly 1 higher in value.
 	private static isStraight(sorted: Card[], groupSize: number): number {
 		if (sorted.length % groupSize !== 0) return 0;
 
 		for (const card of sorted) {
-			if (card.rank === 2) return 0;
+			if (
+				card.rank === 2 ||
+				card.rank === TWO_RANK ||
+				card.rank === JOKER_RANK
+			)
+				return 0;
 		}
 
 		const numberGroups = sorted.length / groupSize;
@@ -410,7 +483,7 @@ export class Game {
 				const expectedValue = Hand.getCardValue(previousCard);
 				const actualValue = Hand.getCardValue(firstCard);
 
-				if (actualValue !== expectedValue - 1) return 0;
+				if (actualValue !== expectedValue + 1) return 0;
 			}
 		}
 
@@ -419,53 +492,83 @@ export class Game {
 			: 0;
 	}
 
-	static isAirplane(
+	// Airplane: 2+ consecutive triples with attached singles (3-player only) or pairs.
+	// The triple ranks must form a consecutive sequence. The remaining cards must all be
+	// singles (one per triple, all different ranks) or all pairs (one pair per triple, all different ranks).
+	static validateAirplane(
 		cards: Card[],
 		rankCounts: Record<number, number>,
-	): boolean {
-		// find all of the ones with length 3, separate it out and plug into isStraight
-		let triples: Card[] = [];
-		for (const rank in rankCounts) {
-			if (rankCounts[rank] === 3) {
-				triples.push(...cards.filter((c) => c.rank === Number(rank)));
-			}
+		doubleDeck = false,
+	): { type: PlayType; value: number } | undefined {
+		const tripleRanks = Object.keys(rankCounts)
+			.map(Number)
+			.filter((r) => rankCounts[r] === 3);
+
+		if (tripleRanks.length < 2) return undefined;
+
+		const tripleCards = cards.filter((c) => tripleRanks.includes(c.rank));
+		const tripleSorted = [...tripleCards].sort(
+			(a, b) => Hand.getCardValue(a) - Hand.getCardValue(b),
+		);
+
+		if (!Game.isStraight(tripleSorted, 3)) return undefined;
+
+		const attachmentCards = cards.filter(
+			(c) => !tripleRanks.includes(c.rank),
+		);
+		const numTriples = tripleRanks.length;
+
+		if (attachmentCards.length === 0) return undefined;
+
+		// Attached singles (excluded in 4-player): one card per triple, all different ranks
+		if (!doubleDeck && attachmentCards.length === numTriples) {
+			const attachmentRanks = attachmentCards.map((c) => c.rank);
+			if (new Set(attachmentRanks).size !== numTriples) return undefined;
+
+			return {
+				type: PlayType.AIRPLANE,
+				value: Hand.getCardValue(tripleSorted[0]),
+			};
 		}
 
-		if (!Game.isStraight(triples, 3)) return false;
+		// Attached pairs: one pair per triple, all different ranks
+		if (attachmentCards.length === numTriples * 2) {
+			const attachmentCounts = Game.countRanks(attachmentCards);
+			const allPairs = Object.values(attachmentCounts).every(
+				(c) => c === 2,
+			);
+			if (!allPairs) return undefined;
+			if (Object.keys(attachmentCounts).length !== numTriples)
+				return undefined;
 
-		// if number of ranks is not 2 or the other rank is not 1 or 2
-		if (
-			Object.keys(rankCounts).length !== 2 ||
-			!Object.values(rankCounts).some(
-				(count) => count === 1 || count === 2,
-			)
-		) {
-			return false;
+			return {
+				type: PlayType.AIRPLANE,
+				value: Hand.getCardValue(tripleSorted[0]),
+			};
 		}
 
-		return false;
+		return undefined;
 	}
 
 	static canBeat(play: Play, lastPlay: Play): boolean {
-		// Big Rocket beats everything
 		if (play.type === PlayType.BIG_ROCKET) return true;
 
-		// Rocket beats everything except Big Rocket
 		if (play.type === PlayType.ROCKET) {
 			if (lastPlay.type === PlayType.BIG_ROCKET) return false;
 			return true;
 		}
 
-		// Bomb beats everything except Rocket and higher Bombs
 		if (play.type === PlayType.BOMB) {
-			if (lastPlay.type === PlayType.ROCKET) return false;
+			if (
+				lastPlay.type === PlayType.ROCKET ||
+				lastPlay.type === PlayType.BIG_ROCKET
+			)
+				return false;
 			if (lastPlay.type === PlayType.BOMB)
 				return play.value > lastPlay.value;
-
 			return true;
 		}
 
-		// Normal plays must match type and have higher value
 		if (play.type !== lastPlay.type) return false;
 		if (play.cards.length !== lastPlay.cards.length) return false;
 
@@ -519,25 +622,24 @@ export class Hand {
 	}
 
 	static getCardValue(card: Card): number {
-		if (card.rank === 14) {
+		if (card.rank === JOKER_RANK)
 			return card.suit === "Black Joker" ? 53 : 54;
-		} else {
-			return card.rank === 2 ? 20 : card.rank === 1 ? 14 : card.rank;
-		}
+
+		if (card.rank === 2 || card.rank === TWO_RANK) return 20;
+		if (card.rank === 1 || card.rank === 14) return 14;
+
+		return card.rank;
 	}
 
 	remove(cards: Card[], check = true): void {
 		for (const card of cards) {
 			const index = this.cards.findIndex((c) => Hand.cardsEqual(c, card));
-			if (index !== -1 || !check) this.cards.splice(index, 1);
+			if (index !== -1) this.cards.splice(index, 1);
 		}
 	}
 
 	static cardsEqual(a: Card, b: Card): boolean {
 		if (a.uid !== undefined || b.uid !== undefined) return a.uid === b.uid;
-
 		return a.suit === b.suit && a.rank === b.rank;
-
-		return false;
 	}
 }
