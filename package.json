@@ -1,22 +1,22 @@
 {
-	"name": "bughouse-n-player",
+	"name": "cardsmp",
 	"version": "1.0.0",
-	"description": "bughouse allowing for multiple boards",
+	"description": "general purpose multiplayer card game server and client",
 	"main": "dist/server/index.js",
 	"type": "module",
 	"scripts": {
-		"build": "pnpm run build:shared && pnpm run build:fix-esm && pnpm run build:client && pnpm run build:server && pnpm run build:alias",
+		"build": "npm run build:shared && npm run build:fix-esm && npm run build:client && npm run build:server && npm run build:alias",
 		"build:client": "vite build",
 		"build:server": "cd server && tsc --build tsconfig.build.json",
 		"build:shared": "cd shared && tsc --build",
 		"build:fix-esm": "node scripts/fix-esm-relative-imports.mjs dist/shared",
-		"build:alias": "tsc-alias -p server/tsconfig.alias.json -f -fe .js",
+		"build:alias": "node scripts/fix-esm-relative-imports.mjs dist/server",
 		"dev": "concurrently --names \"server,vite\" --prefix-colors \"blue,magenta\" \"npm run dev:server\" \"npm run dev:client\"",
 		"dev:server": "tsx watch --tsconfig server/tsconfig.json server/src/index.ts",
 		"dev:client": "vite",
 		"start": "concurrently --names \"server,vite\" --prefix-colors \"blue,magenta\" \"npm run start:server\" \"npm run start:client\"",
 		"start:server": "node dist/server/index.js",
-		"start:client": "vite preview",
+		"start:client": "vite preview --host 0.0.0.0 --port 3000 --strictPort",
 		"clean": "rm -rf dist"
 	},
 	"dependencies": {

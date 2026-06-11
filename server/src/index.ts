@@ -33,9 +33,11 @@ export interface Profile {
 	auth: string;
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const publicPath = path.resolve(__dirname, "../public");
 const isDevelopment = process.env.NODE_ENV === "development";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const publicPath = isDevelopment
+	? path.resolve(__dirname, "../../public")
+	: path.resolve(__dirname, "../public");
 
 // Setup Vite in dev, static serving in production
 if (isDevelopment) {
@@ -46,7 +48,7 @@ if (isDevelopment) {
 	});
 	app.use(vite.middlewares);
 } else {
-	app.use(express.static(path.resolve(__dirname, "../public")));
+	app.use(express.static(publicPath));
 }
 
 app.get("/games/:roomCode", (request, response) => {
@@ -56,9 +58,7 @@ app.get("/games/:roomCode", (request, response) => {
 	if (isDevelopment) {
 		response.sendFile("index.html", { root: publicPath });
 	} else {
-		response.sendFile("index.html", {
-			root: path.resolve(__dirname, "../public"),
-		});
+		response.sendFile("index.html", { root: publicPath });
 	}
 });
 
