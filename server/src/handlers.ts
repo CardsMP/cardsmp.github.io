@@ -3,8 +3,15 @@ import type { Card } from "@shared/card";
 import { GamePhase } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
 import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
-import type { GameSocket } from ".";
-import { io, emitRoomList, MENU_ROOM, rooms, gameSockets, profiles } from ".";
+import type { GameSocket } from "./index";
+import {
+	io,
+	emitRoomList,
+	MENU_ROOM,
+	rooms,
+	gameSockets,
+	profiles,
+} from "./index";
 
 export function setupHandlers(socket: GameSocket): void {
 	socket.on("ping", () => {
@@ -53,10 +60,7 @@ export function setupHandlers(socket: GameSocket): void {
 		}
 
 		if (!socket.room.tryStartRoom()) {
-			socket.emit(
-				"error",
-				`Need 3 or 4 players to start`,
-			);
+			socket.emit("error", `Need 3 or 4 players to start`);
 			return;
 		}
 
@@ -148,7 +152,10 @@ function emitStartedRoom(room: Room): void {
 		);
 
 		if (playerSocket)
-			playerSocket.emit("started-room", room.game.serialize(player.index));
+			playerSocket.emit(
+				"started-room",
+				room.game.serialize(player.index),
+			);
 	}
 }
 
