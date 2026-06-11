@@ -60,7 +60,7 @@ export function setupHandlers(socket: GameSocket): void {
 			return;
 
 		if (!socket.room.tryStartRoom()) {
-			socket.emit("error", "Need 3 or 4 players to reset");
+			socket.emit("error", "Need 3 or 4 players");
 			return;
 		}
 

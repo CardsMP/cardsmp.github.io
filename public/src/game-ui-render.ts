@@ -34,6 +34,36 @@ function getSelectedCardObjects(): Card[] {
 	);
 }
 
+function applyCardRowLayout(
+	container: HTMLElement,
+	totalCards: number,
+	overlapVar: string,
+): void {
+	const cardWidth = 102;
+	const defaultGap = 8;
+	const availableWidth =
+		container.clientWidth || container.getBoundingClientRect().width;
+	const naturalWidth =
+		totalCards * cardWidth + Math.max(0, totalCards - 1) * defaultGap;
+
+	if (totalCards > 1 && naturalWidth > availableWidth) {
+		const overlap =
+			Math.min(
+				cardWidth - 1,
+				(naturalWidth - availableWidth) / (totalCards - 1),
+			) || 0;
+		container.dataset.layoutMode = "overlap";
+		container.style.setProperty(overlapVar, `${overlap}px`);
+		container.style.gap = "0px";
+	} else {
+		container.dataset.layoutMode = "gap";
+		container.style.setProperty(overlapVar, "0px");
+		container.style.gap = `${defaultGap}px`;
+	}
+
+	container.style.justifyContent = "center";
+}
+
 export function showRoomElements(): void {
 	for (const screen of document.querySelectorAll(".screen"))
 		screen.classList.add("hidden");
@@ -41,10 +71,40 @@ export function showRoomElements(): void {
 	const gameScreen = document.querySelector("#game") as HTMLDivElement;
 	gameScreen.classList.remove("hidden");
 
-	const codeEl = document.querySelector("#game-room-code") as HTMLSpanElement;
-	if (codeEl) codeEl.textContent = gs.room.code || "";
+	const codeEl = document.querySelector(
+		"#game-room-code",
+	) as HTMLButtonElement;
+	if (codeEl) {
+		const roomCode = gs.room.code || "";
+		codeEl.textContent = roomCode;
+		codeEl.title = roomCode
+			? "Click to copy invite link"
+			: "No room code available";
+		codeEl.classList.toggle("is-clickable", !!roomCode);
+		codeEl.disabled = !roomCode;
+		codeEl.onclick = roomCode ? () => copyRoomInviteLink(roomCode) : null;
+	}
 
 	clearGameArea();
+}
+
+async function copyRoomInviteLink(roomCode: string): Promise<void> {
+	const inviteLink = `${globalThis.location.origin}/games/${roomCode}`;
+
+	try {
+		await globalThis.navigator.clipboard?.writeText(inviteLink);
+	} catch {}
+
+	const textarea = document.createElement("textarea");
+	textarea.value = inviteLink;
+	textarea.setAttribute("readonly", "true");
+	textarea.style.position = "fixed";
+	textarea.style.top = "-1000px";
+	textarea.style.opacity = "0";
+	document.body.append(textarea);
+	textarea.select();
+	document.execCommand("copy");
+	textarea.remove();
 }
 
 export function updateUIPlayerList(): void {
@@ -235,6 +295,7 @@ function renderTableMessage(): void {
 		footer.textContent = type;
 
 		msg.append(title, cards, footer);
+		applyCardRowLayout(cards, game.lastPlay.cards.length, "--table-overlap");
 	} else if (game.phase === GamePhase.FINISHED) {
 		msg.classList.remove("is-empty");
 		msg.textContent = "Round over. Anyone can reset the round.";
@@ -255,28 +316,8 @@ export function renderCardHand(): void {
 	const myPlayer = game.players[gs.player.index];
 	if (!myPlayer) return;
 
-	const cardWidth = 102;
-	const defaultGap = 8;
 	const totalCards = myPlayer.hand.cards.length;
-	const availableWidth =
-		handArea.clientWidth || handArea.getBoundingClientRect().width;
-	const naturalWidth =
-		totalCards * cardWidth + Math.max(0, totalCards - 1) * defaultGap;
-	if (totalCards > 1 && naturalWidth > availableWidth) {
-		const overlap =
-			Math.min(
-				cardWidth - 1,
-				(naturalWidth - availableWidth) / (totalCards - 1),
-			) || 0;
-		handArea.dataset.layoutMode = "overlap";
-		handArea.style.setProperty("--hand-overlap", `${overlap}px`);
-		handArea.style.gap = "0px";
-	} else {
-		handArea.dataset.layoutMode = "gap";
-		handArea.style.setProperty("--hand-overlap", "0px");
-		handArea.style.gap = `${defaultGap}px`;
-	}
-	handArea.style.justifyContent = "center";
+	applyCardRowLayout(handArea, totalCards, "--hand-overlap");
 
 	const currentKeys = new Set(
 		myPlayer.hand.cards.map((card) => getCardKey(card)),
@@ -341,7 +382,7 @@ function renderActionButtons(): void {
 				playerCount < 3 || playerCount > MAX_ROOM_PLAYERS;
 			if (needsPlayers) {
 				const needsPlayersBtn = makeBtn(
-					"Need 3-4 Players to Reset",
+					"Need 3-4 Players",
 					"",
 					() => {},
 				);

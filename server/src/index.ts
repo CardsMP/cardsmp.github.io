@@ -1,6 +1,7 @@
 import express from "express";
 import { setupHandlers } from "./handlers";
 import { randomBytes } from "node:crypto";
+import fs from "node:fs";
 import http from "node:http";
 import { Server, Socket } from "socket.io";
 import { Player } from "@shared/player";
@@ -32,22 +33,91 @@ export interface Profile {
 	auth: string;
 }
 
-const isDevelopment = process.env.NODE_ENV === "development";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const publicPath = isDevelopment
-	? path.resolve(__dirname, "../../public")
-	: path.resolve(__dirname, "../public");
+const repoRoot = path.resolve(__dirname, "../..");
+const devPublicPath = path.resolve(__dirname, "../../public");
+const prodPublicPath = path.resolve(__dirname, "../public");
+const publicPath = fs.existsSync(prodPublicPath) ? prodPublicPath : devPublicPath;
+const isDevelopment = publicPath === devPublicPath;
+const sharedSrcPath = path.resolve(repoRoot, "shared/src");
+const assetPreloadHeader = buildAssetPreloadHeader(publicPath);
+
+function buildAssetPreloadHeader(rootPath: string): string {
+	const imageExtensions = new Set([
+		".avif",
+		".gif",
+		".ico",
+		".jpeg",
+		".jpg",
+		".png",
+		".svg",
+		".webp",
+	]);
+	const assetPaths: string[] = [];
+
+	function visitDirectory(directoryPath: string): void {
+		for (const entry of fs.readdirSync(directoryPath, {
+			withFileTypes: true,
+		})) {
+			const fullPath = path.join(directoryPath, entry.name);
+			if (entry.isDirectory()) {
+				visitDirectory(fullPath);
+				continue;
+			}
+
+			if (!imageExtensions.has(path.extname(entry.name).toLowerCase()))
+				continue;
+
+			const relativePath = path
+				.relative(rootPath, fullPath)
+				.split(path.sep)
+				.join("/");
+			assetPaths.push(`/${relativePath}`);
+		}
+	}
+
+	visitDirectory(rootPath);
+
+	return assetPaths
+		.sort()
+		.map((assetPath) => `<${assetPath}>; rel=preload; as=image`)
+		.join(", ");
+}
+
+app.use((request, response, next) => {
+	if (
+		request.method === "GET" &&
+		request.accepts("html") &&
+		assetPreloadHeader
+	) {
+		response.setHeader("Link", assetPreloadHeader);
+	}
+
+	next();
+});
 
 // Setup Vite in dev, static serving in production
 if (isDevelopment) {
 	const { createServer } = await import("vite");
 	const vite = await createServer({
-		server: { middlewareMode: true },
-		appType: "spa",
 		root: publicPath,
+		resolve: {
+			alias: {
+				"@shared": sharedSrcPath,
+			},
+		},
+		server: {
+			middlewareMode: true,
+			fs: {
+				allow: [repoRoot],
+			},
+		},
+		appType: "spa",
 	});
 	app.use(vite.middlewares);
 } else {
+	app.use("/cards", express.static(path.join(publicPath, "cards")));
+	app.use("/img", express.static(path.join(publicPath, "img")));
 	app.use(express.static(publicPath));
 }
 
@@ -55,11 +125,7 @@ app.get("/games/:roomCode", (request, response) => {
 	const roomCode = request.params.roomCode as string;
 	if (!/^[A-Z0-9]{4}$/.test(roomCode))
 		return response.status(404).send("Invalid room code format");
-	if (isDevelopment) {
-		response.sendFile("index.html", { root: publicPath });
-	} else {
-		response.sendFile("index.html", { root: publicPath });
-	}
+	response.sendFile("index.html", { root: publicPath });
 });
 
 io.on("connection", (socket: Socket) => {

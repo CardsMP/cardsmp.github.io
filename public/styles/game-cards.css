@@ -47,14 +47,21 @@
 	justify-content: center;
 	align-items: center;
 	margin: auto 0;
-	padding-left: 22px;
+	gap: 8px;
 	width: 100%;
-	height: var(--card-container-height);
-	min-height: var(--card-container-height);
+	height: var(--card-height);
+	min-height: var(--card-height);
+	max-width: 100%;
+}
+
+.table-played-cards[data-layout-mode="overlap"] .table-card-img + .table-card-img {
+	margin-left: calc(var(--table-overlap, 0px) * -1);
 }
 
 .table-card-img {
-	margin-left: -22px;
+	display: block;
+	flex: 0 0 var(--card-width);
+	margin-left: 0;
 	border-radius: 6px;
 	background: transparent;
 	width: var(--card-width);

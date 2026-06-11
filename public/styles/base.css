@@ -82,6 +82,23 @@ button {
 	height: 48px;
 	font-weight: 600;
 	font-size: 16px;
+	transition:
+		transform 120ms ease,
+		filter 120ms ease,
+		background-color 120ms ease,
+		color 120ms ease,
+		border-color 120ms ease,
+		box-shadow 120ms ease;
+}
+
+button:not(:disabled):hover {
+	transform: translateY(-1px);
+	filter: brightness(1.06);
+}
+
+button:not(:disabled):active {
+	transform: translateY(0);
+	filter: brightness(0.98);
 }
 
 button:disabled {
@@ -101,10 +118,6 @@ button:disabled {
 	align-self: stretch;
 	border: 1px solid var(--border-strong);
 	background: var(--surface-solid);
-	color: var(--text-muted);
-}
-
-.btn-secondary:hover {
 	color: var(--text-secondary);
 }
 

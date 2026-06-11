@@ -12,6 +12,52 @@
 	font-size: 36px;
 }
 
+.game-room-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border-radius: 8px;
+	background: transparent;
+	padding: 4px 8px;
+	height: auto;
+	color: var(--text-primary);
+	font: inherit;
+	font-weight: 500;
+	line-height: 1;
+	appearance: none;
+	user-select: none;
+	transition:
+		background-color 120ms ease,
+		border-color 120ms ease,
+		box-shadow 120ms ease;
+}
+
+.game-room-title.is-clickable {
+	cursor: pointer;
+}
+
+.game-room-title.is-clickable:hover,
+.game-room-title.is-clickable:focus-visible {
+	background: rgba(255, 255, 255, 0.06);
+	outline: none;
+}
+
+.game-room-title.is-clickable:active,
+.game-room-title:active {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.game-room-title:disabled {
+	cursor: default;
+	opacity: 0.6;
+}
+
+.game-room-title:disabled:hover,
+.game-room-title:disabled:focus-visible {
+	background: transparent;
+	color: var(--text-primary);
+}
+
 #scoreboard-section {
 	display: flex;
 	flex-direction: column;
