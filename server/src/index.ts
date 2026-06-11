@@ -44,17 +44,30 @@ const sharedSrcPath = path.resolve(repoRoot, "shared/src");
 const assetPreloadHeader = buildAssetPreloadHeader(publicPath);
 
 function buildAssetPreloadHeader(rootPath: string): string {
-	const imageExtensions = new Set([
-		".avif",
-		".gif",
-		".ico",
-		".jpeg",
-		".jpg",
-		".png",
-		".svg",
-		".webp",
-	]);
-	const assetPaths: string[] = [];
+	type AssetPreload = {
+		href: string;
+	};
+
+	const preloadAssets: AssetPreload[] = [];
+
+	function isPreloadableImage(relativePath: string): boolean {
+		const ext = path.extname(relativePath).toLowerCase();
+		return [
+			".avif",
+			".gif",
+			".ico",
+			".jpeg",
+			".jpg",
+			".png",
+			".svg",
+			".webp",
+		].includes(ext);
+	}
+
+	function getPreloadTarget(relativePath: string): AssetPreload | null {
+		if (!isPreloadableImage(relativePath)) return null;
+		return { href: `/${relativePath}` };
+	}
 
 	function visitDirectory(directoryPath: string): void {
 		for (const entry of fs.readdirSync(directoryPath, {
@@ -66,22 +79,21 @@ function buildAssetPreloadHeader(rootPath: string): string {
 				continue;
 			}
 
-			if (!imageExtensions.has(path.extname(entry.name).toLowerCase()))
+			const preloadTarget = getPreloadTarget(
+				path.relative(rootPath, fullPath).split(path.sep).join("/"),
+			);
+			if (!preloadTarget)
 				continue;
 
-			const relativePath = path
-				.relative(rootPath, fullPath)
-				.split(path.sep)
-				.join("/");
-			assetPaths.push(`/${relativePath}`);
+			preloadAssets.push(preloadTarget);
 		}
 	}
 
 	visitDirectory(rootPath);
 
-	return assetPaths
-		.sort()
-		.map((assetPath) => `<${assetPath}>; rel=preload; as=image`)
+	return preloadAssets
+		.sort((a, b) => a.href.localeCompare(b.href))
+		.map(({ href }) => `<${href}>; rel=preload; as=image`)
 		.join(", ");
 }
 
