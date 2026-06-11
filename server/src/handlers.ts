@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 import type { Card } from "@shared/card";
-import { GamePhase } from "@shared/game";
+import { GamePhase, PlayType } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
 import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
 import type { GameSocket } from "./index";
@@ -88,6 +88,12 @@ export function setupHandlers(socket: GameSocket): void {
 		}
 
 		io.to(socket.room.code).emit("p-bet-landlord", bet);
+		broadcastSystemChat(
+			socket.room,
+			`${socket.player.name || "A player"} ${
+				bet > 0 ? `bet ${bet}` : "passed"
+			}. Current bet is ${socket.room.game.bet}.`,
+		);
 
 		if (result) {
 			const landlordId = socket.room.game.landlord?.id;
@@ -122,6 +128,22 @@ export function setupHandlers(socket: GameSocket): void {
 
 		io.to(socket.room.code).emit("p-played-cards", cards);
 
+		const lastPlay = socket.room.game.lastPlay;
+		if (
+			lastPlay?.type === PlayType.BOMB ||
+			lastPlay?.type === PlayType.ROCKET
+		) {
+			socket.room.game.bet *= 2;
+			io.to(socket.room.code).emit(
+				"p-bet-landlord",
+				socket.room.game.bet,
+			);
+			broadcastSystemChat(
+				socket.room,
+				`${socket.player.name || "A player"} played a bomb. Bet doubled to ${socket.room.game.bet}.`,
+			);
+		}
+
 		if (result) {
 			const isLandlord =
 				socket.player.id === socket.room.game.landlord?.id;
@@ -143,6 +165,11 @@ export function setupHandlers(socket: GameSocket): void {
 		socket.room.chat.push(socket.player.id, message);
 		io.to(socket.room.code).emit("p-sent-chat", socket.player.id, message);
 	});
+}
+
+function broadcastSystemChat(room: Room, message: string): void {
+	room.chat.push("server", message);
+	io.to(room.code).emit("p-sent-chat", "server", message);
 }
 
 function emitStartedRoom(room: Room): void {

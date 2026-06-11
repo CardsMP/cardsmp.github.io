@@ -31,29 +31,13 @@ export class Game {
 	constructor() {}
 
 	serialize(toIndex?: number): SerializedGame {
-		if (toIndex === undefined) {
-			return {
-				bottom: this.bottom,
-				biddingTurns: this.biddingTurns,
-				currentIndex: this.currentIndex,
-				lastPlay: this.lastPlay,
-				phase: this.phase,
-				players: this.players.map((p) => p.serialize(false)),
-				bet: this.bet,
-				landlordIndex: this.landlordIndex,
-			};
-		}
-
-		// if toIndex !== index, send player with hand replaced with flipped cards
 		return {
 			bottom: this.bottom,
 			biddingTurns: this.biddingTurns,
 			currentIndex: this.currentIndex,
 			lastPlay: this.lastPlay,
 			phase: this.phase,
-			players: this.players.map((player, index) =>
-				player.serialize(index !== toIndex),
-			),
+			players: this.players.map((player) => player.serialize()),
 			bet: this.bet,
 			landlordIndex: this.landlordIndex,
 		};
@@ -405,9 +389,7 @@ export class Game {
 			const key =
 				card.type === "Joker"
 					? `joker_${card.color}`
-					: card.type === "Playing"
-						? String(card.rank)
-						: "flipped";
+					: String(card.rank);
 			counts[key] = (counts[key] || 0) + 1;
 		}
 		return counts;
@@ -442,15 +424,16 @@ export class Game {
 					Game.getStraightRankValue(previousCard) + 1;
 				const actualValue = Game.getStraightRankValue(firstCard);
 
-				if (actualValue !== expectedValue)
-					return false;
+				if (actualValue !== expectedValue) return false;
 			}
 		}
 
 		return numberGroups >= (groupSize === 1 ? 5 : groupSize === 2 ? 3 : 2);
 	}
 
-	private static getStraightRankValue(card: Extract<Card, { type: "Playing" }>): number {
+	private static getStraightRankValue(
+		card: Extract<Card, { type: "Playing" }>,
+	): number {
 		return card.rank === 1 ? 14 : card.rank;
 	}
 
@@ -526,10 +509,7 @@ export class Hand {
 				return card.color === "BLACK" ? 53 : 54;
 			}
 			case "Playing": {
-				return card.rank === 2 ? 20 : card.rank === 1 ? 19 : card.rank;
-			}
-			case "Flipped": {
-				return 55;
+				return card.rank === 2 ? 20 : card.rank === 1 ? 14 : card.rank;
 			}
 		}
 	}
@@ -542,9 +522,7 @@ export class Hand {
 	}
 
 	static cardsEqual(a: Card, b: Card): boolean {
-		if (a.type !== "Flipped" && b.type !== "Flipped") {
-			if (a.uid !== undefined || b.uid !== undefined) return a.uid === b.uid;
-		}
+		if (a.uid !== undefined || b.uid !== undefined) return a.uid === b.uid;
 
 		if (a.type === "Joker" && b.type === "Joker")
 			return a.color === b.color;

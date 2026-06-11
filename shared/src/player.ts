@@ -29,13 +29,11 @@ export class Player {
       this.index = undefined;
    }
 
-   serialize(hideHand = false): SerializedPlayer {
+   serialize(): SerializedPlayer {
       return {
          id: this.id,
          name: this.name,
-         hand: hideHand
-            ? this.hand.cards.map(() => ({ type: "Flipped" }))
-            : this.hand.cards,
+         hand: this.hand.cards,
          status: this.status,
          gameIndex: this.index,
       };

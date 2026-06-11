@@ -56,10 +56,6 @@ export function getCardDisplay(card: Card): {
 	isRed: boolean;
 	label: string;
 } {
-	if (card.type === "Flipped") {
-		return { rank: "", suit: "", isRed: false, label: "Flipped" };
-	}
-
 	if (card.type === "Joker") {
 		const isRed = card.color === "RED";
 		return {

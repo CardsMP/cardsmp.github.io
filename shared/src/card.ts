@@ -14,8 +14,4 @@ export type Joker = {
 	uid?: string;
 };
 
-export type Flipped = {
-	type: "Flipped";
-};
-
-export type Card = Playing | Joker | Flipped;
+export type Card = Playing | Joker;

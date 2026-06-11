@@ -1,6 +1,6 @@
 import type { Card } from "@shared/card";
 import type { SerializedGame } from "@shared/game";
-import { Game } from "@shared/game";
+import { Game, GamePhase } from "@shared/game";
 import { Player, type PlayerStatus } from "@shared/player";
 import { Room, RoomStatus, type SerializedRoom } from "@shared/room";
 import {
@@ -65,7 +65,11 @@ export function initGameSocket(): void {
 	});
 
 	gs.socket.on("p-bet-landlord", (bet: number) => {
-		gs.room.game.betLandlord(bet);
+		if (gs.room.game.phase === GamePhase.BIDDING) {
+			gs.room.game.betLandlord(bet);
+		} else {
+			gs.room.game.bet = bet;
+		}
 		updateUIGame();
 	});
 

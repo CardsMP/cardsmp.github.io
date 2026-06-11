@@ -8,8 +8,5 @@ export function getCardKey(card: Card): string {
 			? `Playing:${card.uid}`
 			: `Playing:${card.suit}:${card.rank}`;
 	}
-	if (card.type === "Joker") {
-		return card.uid ? `Joker:${card.uid}` : `Joker:${card.color}`;
-	}
-	return "Flipped";
+	return card.uid ? `Joker:${card.uid}` : `Joker:${card.color}`;
 }

@@ -40,12 +40,9 @@ export class Room {
 	}
 
 	serialize(viewerIndex?: number): SerializedRoom {
-		const hideHands = this.status === RoomStatus.PLAYING;
 		const serializedPlayers: Record<string, SerializedPlayer> = {};
 		for (const [id, player] of this.players.entries())
-			serializedPlayers[id] = player.serialize(
-				hideHands ? player.index !== viewerIndex : false,
-			);
+			serializedPlayers[id] = player.serialize();
 
 		return {
 			code: this.code,
