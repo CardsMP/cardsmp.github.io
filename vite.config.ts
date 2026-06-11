@@ -1,12 +1,10 @@
 import path from "path";
-import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-	// Ensure deep links like /games/ABCD serve index.html in dev.
 	appType: "spa",
 	root: "public",
-	publicDir: ".",
+	publicDir: false,
 
 	resolve: {
 		alias: {
@@ -20,19 +18,6 @@ export default defineConfig({
 	},
 
 	server: {
-		host: "0.0.0.0",
-		port: 3000,
-		allowedHosts: true,
-		proxy: {
-			"/socket.io": {
-				target: "http://localhost:8000",
-				ws: true,
-				changeOrigin: true,
-			},
-		},
-	},
-
-	preview: {
 		host: "0.0.0.0",
 		port: 3000,
 		allowedHosts: true,
