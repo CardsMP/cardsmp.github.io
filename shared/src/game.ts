@@ -251,6 +251,17 @@ export class Game {
 			player.hand.remove(cards, check);
 			player.handCount = player.hand.cards.length;
 			this.lastPlay = play;
+			
+			if (play.type === PlayType.BOMB || play.type === PlayType.ROCKET)
+			{
+				this.bet *= 2;
+
+			}
+
+			else if (play.type === PlayType.BIG_ROCKET)
+			{
+				this.bet *= 4;
+			}
 
 			if (player.hand.cards.length === 0) {
 				this.phase = GamePhase.FINISHED;
@@ -316,6 +327,7 @@ export class Game {
 			};
 		}
 
+		//lets see if it commits something
 		// Solo
 		if (sorted.length === 1) {
 			return { type: PlayType.SOLO, value: Hand.getCardValue(sorted[0]) };
