@@ -1,6 +1,8 @@
 import { JOKER_RANK, TWO_RANK, type Card } from "@shared/card";
 import { selectedCardKeys } from "./game-ui-state";
 
+const preloadedImages = new Set<string>();
+
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
 
@@ -71,6 +73,21 @@ export function getCardImagePath(card: Card): string {
 	};
 	const rank = rankMap[card.rank] || String(card.rank).padStart(2, "0");
 	return `/cards/${suitMap[card.suit]}_${rank}.png`;
+}
+
+export function preloadCardImages(cards: Card[]): void {
+	for (const card of cards) {
+		const href = getCardImagePath(card);
+		if (preloadedImages.has(href)) continue;
+		preloadedImages.add(href);
+
+		const link = document.createElement("link");
+		link.rel = "preload";
+		link.as = "image";
+		link.fetchPriority = "high";
+		link.href = href;
+		document.head.prepend(link);
+	}
 }
 
 export function makeBtn(

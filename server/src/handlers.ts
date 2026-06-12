@@ -100,6 +100,9 @@ export function setupHandlers(socket: GameSocket): void {
 		if (result) {
 			const landlordId = socket.room.game.landlord?.id;
 			const bottom = [...socket.room.game.bottom];
+			socket.room.game.becomeLandlord(bottom);
+			const landlordHandCount =
+				socket.room.game.landlord?.hand.cards.length ?? bottom.length;
 			broadcastSystemChat(
 				socket.room,
 				`Bottom cards: ${formatCards(bottom)}.`,
@@ -107,9 +110,15 @@ export function setupHandlers(socket: GameSocket): void {
 			io.to(socket.room.code).emit(
 				"p-became-landlord",
 				landlordId,
-				bottom,
+				landlordHandCount,
 			);
-			socket.room.game.becomeLandlord(bottom);
+			if (landlordId) {
+				const landlordSocket = [...gameSockets.values()].find(
+					(s) => s.player.id === landlordId,
+				);
+				if (landlordSocket)
+					landlordSocket.emit("p-landlord-bottom", bottom);
+			}
 		}
 	});
 

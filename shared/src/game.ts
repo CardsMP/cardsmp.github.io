@@ -193,7 +193,7 @@ export class Game {
 
 		player.hand.cards.push(...bottom);
 		player.hand.sort();
-		player.handCount = player.hand.cards.length;
+		player.handCount += bottom.length;
 
 		this.bottom = [];
 		this.phase = GamePhase.PLAYING;
@@ -214,8 +214,9 @@ export class Game {
 					cards,
 					this.isDoubleDeck,
 				);
-				player.hand.remove(cards, false);
-				player.handCount = player.hand.cards.length;
+				if (player.hand.cards.length > 0)
+					player.hand.remove(cards, false);
+				player.handCount = Math.max(0, player.handCount - cards.length);
 				this.lastPlay = {
 					cards,
 					type: playType?.type ?? PlayType.SOLO,
@@ -231,7 +232,7 @@ export class Game {
 			)
 				this.lastPlay = undefined;
 
-			return player.hand.cards.length === 0;
+			return player.handCount === 0;
 		}
 
 		if (cards.length > 0) {
@@ -249,9 +250,9 @@ export class Game {
 				return undefined;
 
 			player.hand.remove(cards, check);
-			player.handCount = player.hand.cards.length;
+			player.handCount = Math.max(0, player.handCount - cards.length);
 			this.lastPlay = play;
-			
+
 			if (play.type === PlayType.BOMB || play.type === PlayType.ROCKET)
 			{
 				this.bet *= 2;
@@ -263,7 +264,7 @@ export class Game {
 				this.bet *= 4;
 			}
 
-			if (player.hand.cards.length === 0) {
+			if (player.handCount === 0) {
 				this.phase = GamePhase.FINISHED;
 				return true;
 			}

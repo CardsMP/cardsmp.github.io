@@ -10,6 +10,7 @@ import {
 	formatPlayType,
 	getCardImagePath,
 	makeBtn,
+	preloadCardImages,
 } from "./game-ui-utils";
 
 function isPlayersTurn(): boolean {
@@ -108,6 +109,8 @@ async function copyRoomInviteLink(roomCode: string): Promise<void> {
 }
 
 export function updateUIPlayerList(): void {
+	if (!gs.room) return;
+
 	const playerList = document.querySelector("#player-list");
 	if (!playerList) return;
 
@@ -118,18 +121,21 @@ export function updateUIPlayerList(): void {
 
 		const isLandlord = gs.room.game.landlord?.id === player.id;
 		const isYou = player.id === gs.player.id;
-		const cardCount = player.handCount ?? player.hand.cards.length;
+		const score = player.score ?? 0;
 
 		div.innerHTML = `
 			<div class="player-name">${escapeHtml(player.name || "?")}${isYou ? " (You)" : ""}${isLandlord ? '<span class="landlord-indicator">L</span>' : ""}</div>
-			<div class="card-count">${cardCount}</div>
+			<div class="card-count">${score}</div>
 		`;
 		playerList.append(div);
 	}
 }
 
 export function updateUIGame(): void {
+	if (!gs.room || !gs.player) return;
+
 	updateUIPlayerList();
+	preloadVisibleCardImages();
 	renderNameplates();
 	renderCardHand();
 	renderActionButtons();
@@ -139,6 +145,8 @@ export function updateUIGame(): void {
 }
 
 function renderNameplates(): void {
+	if (!gs.room || !gs.player) return;
+
 	for (const el of document.querySelectorAll(".player-nameplate"))
 		el.remove();
 
@@ -183,6 +191,8 @@ function renderNameplates(): void {
 }
 
 function getSeatedPlayers(): Player[] {
+	if (!gs.room || !gs.player) return [];
+
 	const gamePlayers = gs.room.game.players;
 	const myGameIndex = gs.player.index;
 	if (gamePlayers.length > 0 && myGameIndex !== undefined) {
@@ -204,6 +214,8 @@ function getSeatedPlayers(): Player[] {
 }
 
 function getSortedRoomPlayers(): Player[] {
+	if (!gs.room) return [];
+
 	const players = [...gs.room.players.values()];
 
 	return players.sort((a, b) => {
@@ -219,6 +231,18 @@ function getSortedRoomPlayers(): Player[] {
 	});
 }
 
+function preloadVisibleCardImages(): void {
+	if (!gs.room?.game || gs.player.index === undefined) return;
+
+	const myPlayer = gs.room.game.players[gs.player.index];
+	const cards = myPlayer ? [...myPlayer.hand.cards] : [];
+	if (gs.room.game.lastPlay?.cards?.length) {
+		cards.push(...gs.room.game.lastPlay.cards);
+	}
+
+	preloadCardImages(cards);
+}
+
 function getNameplatePositionClass(relativeIndex: number): string {
 	if (relativeIndex === 0) return "nameplate-own";
 	if (relativeIndex === 1) return "nameplate-right";
@@ -229,6 +253,11 @@ function getNameplatePositionClass(relativeIndex: number): string {
 function renderTurnBanner(): void {
 	const banner = document.querySelector("#turn-banner") as HTMLElement;
 	if (!banner) return;
+
+	if (!gs.room || !gs.player) {
+		banner.style.display = "none";
+		return;
+	}
 
 	const game = gs.room.game;
 	if (!game?.current) {
@@ -258,6 +287,12 @@ function renderTurnBanner(): void {
 function renderTableMessage(): void {
 	const msg = document.querySelector("#table-center-message") as HTMLElement;
 	if (!msg) return;
+
+	if (!gs.room || !gs.player) {
+		msg.textContent = "";
+		msg.className = "";
+		return;
+	}
 
 	const game = gs.room.game;
 	msg.style.display = "flex";

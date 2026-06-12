@@ -40,7 +40,7 @@ export class Player {
          id: this.id,
          name: this.name,
          hand: viewerId === this.id ? this.hand.cards : [],
-         handCount: this.hand.cards.length,
+         handCount: this.handCount,
          status: this.status,
          gameIndex: this.index,
          score: this.score,
