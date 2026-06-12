@@ -249,18 +249,13 @@ export class Game {
 			if (this.lastPlay && !Game.canBeat(play, this.lastPlay))
 				return undefined;
 
-			player.hand.remove(cards, check);
-			player.handCount = Math.max(0, player.handCount - cards.length);
+			if (!player.hand.remove(cards, check)) return undefined;
+			player.handCount = player.hand.cards.length;
 			this.lastPlay = play;
 
-			if (play.type === PlayType.BOMB || play.type === PlayType.ROCKET)
-			{
+			if (play.type === PlayType.BOMB || play.type === PlayType.ROCKET) {
 				this.bet *= 2;
-
-			}
-
-			else if (play.type === PlayType.BIG_ROCKET)
-			{
+			} else if (play.type === PlayType.BIG_ROCKET) {
 				this.bet *= 4;
 			}
 
@@ -328,7 +323,6 @@ export class Game {
 			};
 		}
 
-		//lets see if it commits something
 		// Solo
 		if (sorted.length === 1) {
 			return { type: PlayType.SOLO, value: Hand.getCardValue(sorted[0]) };
@@ -644,11 +638,27 @@ export class Hand {
 		return card.rank;
 	}
 
-	remove(cards: Card[], check = true): void {
+	remove(cards: Card[], check = true): boolean {
+		if (check && !this.hasAll(cards)) return false;
+
 		for (const card of cards) {
 			const index = this.cards.findIndex((c) => Hand.cardsEqual(c, card));
 			if (index !== -1) this.cards.splice(index, 1);
 		}
+
+		return true;
+	}
+
+	private hasAll(cards: Card[]): boolean {
+		const remaining = [...this.cards];
+
+		for (const card of cards) {
+			const index = remaining.findIndex((c) => Hand.cardsEqual(c, card));
+			if (index === -1) return false;
+			remaining.splice(index, 1);
+		}
+
+		return true;
 	}
 
 	static cardsEqual(a: Card, b: Card): boolean {
