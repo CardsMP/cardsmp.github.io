@@ -4,14 +4,7 @@ import { GamePhase, PlayType } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
 import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
 import type { GameSocket } from "./index";
-import {
-	io,
-	emitRoomList,
-	MENU_ROOM,
-	rooms,
-	gameSockets,
-	profiles,
-} from "./index";
+import { io, MENU_ROOM, rooms, gameSockets, profiles } from "./index";
 
 export function setupHandlers(socket: GameSocket): void {
 	socket.on("ping", () => {
@@ -37,13 +30,10 @@ export function setupHandlers(socket: GameSocket): void {
 		}
 
 		joinRoom(socket, io, code);
-
-		emitRoomList();
 	});
 
 	socket.on("join-room", (code: string) => {
 		joinRoom(socket, io, code.toUpperCase());
-		emitRoomList();
 	});
 
 	socket.on("disconnect", () => {
@@ -66,7 +56,6 @@ export function setupHandlers(socket: GameSocket): void {
 
 		broadcastSystemChat(socket.room, "Round reset.");
 		emitStartedRoom(socket.room);
-		emitRoomList();
 	});
 
 	socket.on("bet-landlord", (bet: number) => {
@@ -285,7 +274,6 @@ function handlePlayerLeave(socket: GameSocket): void {
 function handleLobbyPlayerLeave(socket: GameSocket, room: Room): void {
 	room.removePlayer(socket.player.id);
 	socket.to(room.code).emit("p-left-room", socket.player.id);
-	emitRoomList();
 }
 
 function handleGamePlayerDisconnect(socket: GameSocket, room: Room): void {
@@ -304,7 +292,6 @@ function shouldDeleteRoom(room: Room): boolean {
 
 function deleteRoom(roomCode: string): void {
 	rooms.delete(roomCode);
-	emitRoomList();
 }
 
 function randomCode(): string {

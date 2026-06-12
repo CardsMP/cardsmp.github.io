@@ -38,7 +38,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const devPublicPath = path.resolve(__dirname, "../../public");
 const prodPublicPath = path.resolve(__dirname, "../public");
-const publicPath = fs.existsSync(prodPublicPath) ? prodPublicPath : devPublicPath;
+const publicPath = fs.existsSync(prodPublicPath)
+	? prodPublicPath
+	: devPublicPath;
 const isDevelopment = publicPath === devPublicPath;
 const sharedSrcPath = path.resolve(repoRoot, "shared/src");
 
@@ -103,7 +105,6 @@ io.on("connection", (socket: Socket) => {
 	});
 	gameSocket.join(MENU_ROOM);
 	setupHandlers(gameSocket);
-	emitRoomList();
 });
 
 const PORT = Number(process.env.PORT) || config.serverPort;
@@ -132,13 +133,6 @@ function randomPlayerID(): string {
 
 function randomAuth(): string {
 	return randomBytes(32).toString("hex");
-}
-
-export function emitRoomList(): void {
-	io.to(MENU_ROOM).emit(
-		"listed-rooms",
-		[...rooms.values()].map((room) => room.getRoomListing()),
-	);
 }
 
 function issueFreshProfile(socket: GameSocket): void {
