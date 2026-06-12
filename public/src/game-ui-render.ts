@@ -13,6 +13,8 @@ import {
 	preloadCardImages,
 } from "./game-ui-utils";
 
+const OPPONENT_CARD_BACK_PATH = "/cards/back.png";
+
 function isPlayersTurn(): boolean {
 	return gs.player.index === gs.room.game.currentIndex;
 }
@@ -40,8 +42,11 @@ function applyCardRowLayout(
 	totalCards: number,
 	overlapVar: string,
 ): void {
-	const cardWidth = 102;
-	const defaultGap = 8;
+	const styles = getComputedStyle(container);
+	const cardWidth =
+		Number.parseFloat(styles.getPropertyValue("--card-width")) || 102;
+	const defaultGap =
+		Number.parseFloat(styles.getPropertyValue("--card-gap")) || 8;
 	const availableWidth =
 		container.clientWidth || container.getBoundingClientRect().width;
 	const naturalWidth =
@@ -147,6 +152,9 @@ export function updateUIGame(): void {
 function renderNameplates(): void {
 	if (!gs.room || !gs.player) return;
 
+	for (const el of document.querySelectorAll(".player-seat"))
+		el.remove();
+
 	for (const el of document.querySelectorAll(".player-nameplate"))
 		el.remove();
 
@@ -155,14 +163,18 @@ function renderNameplates(): void {
 
 	for (let rel = 0; rel < 4; rel++) {
 		const player = seatedPlayers[rel];
+		const seatEl = document.createElement("div");
+		seatEl.className = `player-seat ${getNameplatePositionClass(rel)}${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
+
 		const plate = document.createElement("div");
-		plate.className = `player-nameplate ${getNameplatePositionClass(rel)}${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
+		plate.className = `player-nameplate${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
+		let opponentHand: HTMLElement | undefined;
 
 		if (player) {
 			const game = gs.room.game;
 			const isTurn =
 				game?.players?.length > 0 && game.currentIndex === player.index;
-			const isLandlord = game.landlord?.id === player.id;
+			const isLandlord = game?.landlord?.id === player.id;
 			const cardCount = player.handCount ?? player.hand.cards.length;
 			const seat = player.index ?? rel;
 			const name = player.name || `P${seat + 1}`;
@@ -182,12 +194,46 @@ function renderNameplates(): void {
 					${detail ? `<div class="nameplate-cards">${detail}</div>` : ""}
 				</div>
 			`;
+
+			if (rel !== 0 && hasDetail && cardCount > 0)
+				opponentHand = createOpponentHand(cardCount);
 		} else {
 			plate.innerHTML = "";
 		}
 
-		gameTable.append(plate);
+		seatEl.append(plate);
+		if (opponentHand) seatEl.append(opponentHand);
+		gameTable.append(seatEl);
+
+		if (opponentHand)
+			applyCardRowLayout(
+				opponentHand,
+				opponentHand.childElementCount,
+				"--opponent-hand-overlap",
+			);
 	}
+}
+
+function createOpponentHand(cardCount: number): HTMLElement {
+	const hand = document.createElement("div");
+	hand.className = "opponent-hand";
+	hand.setAttribute("aria-label", `${cardCount} face-down cards`);
+
+	for (let index = 0; index < cardCount; index++) {
+		const card = document.createElement("div");
+		card.className = "opponent-hand-card";
+
+		const img = document.createElement("img");
+		img.className = "opponent-card-back";
+		img.src = OPPONENT_CARD_BACK_PATH;
+		img.alt = "";
+		img.draggable = false;
+
+		card.append(img);
+		hand.append(card);
+	}
+
+	return hand;
 }
 
 function getSeatedPlayers(): Player[] {

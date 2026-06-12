@@ -87,7 +87,7 @@
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
+	gap: var(--card-gap);
 	transform: none;
 	z-index: 6;
 	box-sizing: border-box;
@@ -100,7 +100,7 @@
 .game-card {
 	display: flex;
 	position: relative;
-	flex: 0 0 102px;
+	flex: 0 0 var(--card-width);
 	flex-direction: row;
 	align-items: center;
 	z-index: 1;
@@ -110,10 +110,10 @@
 	margin-left: 0;
 
 	background: transparent;
-	width: 102px;
-	min-width: 102px;
-	max-width: 102px;
-	height: 142px;
+	width: var(--card-width);
+	min-width: var(--card-width);
+	max-width: var(--card-width);
+	height: var(--card-height);
 	overflow: visible;
 }
 

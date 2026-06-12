@@ -6,6 +6,9 @@ const preloadedImages = new Set<string>();
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
 
+	for (const el of document.querySelectorAll(".player-seat"))
+		el.remove();
+
 	for (const el of document.querySelectorAll(".player-nameplate"))
 		el.remove();
 
