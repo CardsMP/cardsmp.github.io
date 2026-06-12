@@ -9,7 +9,7 @@
 	box-sizing: border-box;
 	background: rgba(26, 29, 33, 0.96);
 	width: 600px;
-	height: 320px;
+	height: 280px;
 }
 
 .game-field-cards {
@@ -54,7 +54,9 @@
 	max-width: 100%;
 }
 
-.table-played-cards[data-layout-mode="overlap"] .table-card-img + .table-card-img {
+.table-played-cards[data-layout-mode="overlap"]
+	.table-card-img
+	+ .table-card-img {
 	margin-left: calc(var(--table-overlap, 0px) * -1);
 }
 

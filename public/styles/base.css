@@ -24,6 +24,7 @@
 	--card-width: 102px;
 	--card-height: 142px;
 	--card-gap: 8px;
+	--opponent-hand-edge-inset: 8px;
 	--opponent-hand-min-width: 184px;
 
 	--text: rgba(255, 255, 255, 0.92);
