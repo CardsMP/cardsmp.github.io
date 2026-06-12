@@ -1,6 +1,6 @@
 import { Chat } from "./chat";
 import type { SerializedGame } from "./game";
-import { Game, Hand } from "./game";
+import { Game, GamePhase, Hand } from "./game";
 import type { SerializedPlayer } from "./player";
 import { Player, PlayerStatus } from "./player";
 
@@ -114,6 +114,7 @@ export class Room {
 
 	endRoom(): void {
 		this.status = RoomStatus.LOBBY;
+		this.game.phase = GamePhase.FINISHED;
 
 		for (const player of this.players.values()) {
 			if (player.status === PlayerStatus.DISCONNECTED) {

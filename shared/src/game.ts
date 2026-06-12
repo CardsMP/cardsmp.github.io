@@ -223,6 +223,10 @@ export class Game {
 					value: playType?.value ?? 0,
 					playerIndex: this.currentIndex,
 				};
+				if (player.handCount === 0) {
+					this.phase = GamePhase.FINISHED;
+					return true;
+				}
 			}
 			this.currentIndex = (this.currentIndex + 1) % this.players.length;
 

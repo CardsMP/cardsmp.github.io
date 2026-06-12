@@ -291,9 +291,15 @@ function applyRoundScore(room: Room, landlordWon: boolean): void {
 		const won = landlordWon
 			? player.id === landlordId
 			: player.id !== landlordId;
-		if (!won) continue;
-
-		player.score += roundScore;
+		if (!won && player.id === landlordId) {
+			player.score -= roundScore * (room.players.size - 1);
+		} else if (won && player.id === landlordId) {
+			player.score += roundScore * (room.players.size - 1);
+		} else if (!won && player.id !== landlordId) {
+			player.score -= roundScore;
+		} else if (won && player.id !== landlordId) {
+			player.score += roundScore;
+		}
 
 		const gamePlayer = room.game.players.find((p) => p.id === player.id);
 		if (gamePlayer) gamePlayer.score = player.score;

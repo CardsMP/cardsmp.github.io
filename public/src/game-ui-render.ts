@@ -467,7 +467,7 @@ function renderActionButtons(): void {
 				needsPlayersBtn.disabled = true;
 				container.append(needsPlayersBtn);
 			} else {
-				const resetBtn = makeBtn("Start New Round", "", () =>
+				const resetBtn = makeBtn("Reset Round", "", () =>
 					gs.socket.emit("reset-room"),
 				);
 				container.append(resetBtn);
