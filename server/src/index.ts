@@ -177,7 +177,7 @@ function isAllowedOrigin(
 
 function getAllowedOrigins(): Set<string> {
 	const origins = new Set([
-		"https://lualum.github.io",
+		"https://cardsmp.github.io",
 		"https://cardsmp.duckdns.org",
 		`http://localhost:${config.clientPort}`,
 		`http://127.0.0.1:${config.clientPort}`,

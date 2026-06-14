@@ -20,7 +20,7 @@ jobs:
                       set -e
 
                       APP_DIR=/opt/CardsMPFramework
-                      REPO_URL=https://github.com/lualum/CardsMPFramework.git
+                      REPO_URL=https://github.com/${{ github.repository }}.git
 
                       if [ ! -d "$APP_DIR/.git" ]; then
                           sudo mkdir -p "$APP_DIR"
@@ -32,6 +32,7 @@ jobs:
 
                       sudo chown -R "$USER":"$USER" "$APP_DIR"
 
+                      git remote set-url origin "$REPO_URL"
                       git fetch origin main
                       git reset --hard origin/main
 

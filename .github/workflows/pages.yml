@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-latest
         env:
             VITE_BACKEND_URL: ${{ vars.VITE_BACKEND_URL != '' && vars.VITE_BACKEND_URL || 'https://cardsmp.duckdns.org' }}
-            VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH != '' && vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
+            VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH != '' && vars.VITE_BASE_PATH || '/' }}
         steps:
             - uses: actions/checkout@v4
 
@@ -32,7 +32,7 @@ jobs:
 
             - run: npm run build:pages
 
-            - uses: actions/upload-pages-artifact@v3
+            - uses: actions/upload-pages-artifact@v4
               with:
                   path: dist/public
 
