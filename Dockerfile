@@ -18,9 +18,9 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN pnpm run build \
+RUN pnpm run build:backend \
     && ! grep -R 'from "\.\.js"\|from '\''\.\.js'\''' dist/server
 
-EXPOSE 3000 8000
+EXPOSE 8000
 
 CMD ["pnpm", "run", "start"]

@@ -21,10 +21,7 @@ export class Session {
 			globalThis.sessionStorage?.getItem("name") || undefined;
 		const playerID = id ?? storedId;
 		const token = auth ?? storedAuth;
-		const socketUrl =
-			globalThis.location.port === String(config.clientPort)
-				? `${globalThis.location.protocol}//${globalThis.location.hostname}:${config.serverPort}`
-				: globalThis.location.origin;
+		const socketUrl = getSocketUrl();
 
 		this.socket =
 			playerID && token
@@ -80,6 +77,17 @@ export class Session {
 		this.auth = "";
 		this.name = "";
 	}
+}
+
+function getSocketUrl(): string {
+	const configuredBackendUrl = import.meta.env.VITE_BACKEND_URL?.trim();
+	if (configuredBackendUrl) return configuredBackendUrl.replace(/\/+$/, "");
+
+	if (globalThis.location.port === String(config.clientPort)) {
+		return `${globalThis.location.protocol}//${globalThis.location.hostname}:${config.serverPort}`;
+	}
+
+	return globalThis.location.origin;
 }
 
 export function initSession() {

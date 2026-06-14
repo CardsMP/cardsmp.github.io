@@ -1,4 +1,5 @@
 import { JOKER_RANK, TWO_RANK, type Card } from "@shared/card";
+import { getAssetPath } from "./app-paths";
 import { selectedCardKeys } from "./game-ui-state";
 
 const preloadedImages = new Set<string>();
@@ -56,8 +57,8 @@ export function formatPlayType(type: string): string {
 }
 
 export function getCardImagePath(card: Card): string {
-	if (card.suit === "Red Joker") return "/cards/Joker1.png";
-	if (card.suit === "Black Joker") return "/cards/Joker2.png";
+	if (card.suit === "Red Joker") return getAssetPath("cards/Joker1.png");
+	if (card.suit === "Black Joker") return getAssetPath("cards/Joker2.png");
 
 	const suitMap: Record<string, string> = {
 		h: "hearts",
@@ -75,7 +76,7 @@ export function getCardImagePath(card: Card): string {
 		2: "02",
 	};
 	const rank = rankMap[card.rank] || String(card.rank).padStart(2, "0");
-	return `/cards/${suitMap[card.suit]}_${rank}.png`;
+	return getAssetPath(`cards/${suitMap[card.suit]}_${rank}.png`);
 }
 
 export function preloadCardImages(cards: Card[]): void {

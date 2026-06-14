@@ -40,14 +40,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const devPublicPath = path.resolve(__dirname, "../../public");
 const prodPublicPath = path.resolve(__dirname, "../public");
-const publicPath = fs.existsSync(prodPublicPath)
-	? prodPublicPath
-	: devPublicPath;
-const isDevelopment = publicPath === devPublicPath;
+const hasBuiltClient = fs.existsSync(path.join(prodPublicPath, "index.html"));
+const shouldUseDevClient =
+	process.env.NODE_ENV !== "production" &&
+	fs.existsSync(path.join(devPublicPath, "index.html"));
+const publicPath = hasBuiltClient ? prodPublicPath : devPublicPath;
 const sharedSrcPath = path.resolve(repoRoot, "shared/src");
 
-// Setup Vite in dev, static serving in production
-if (isDevelopment) {
+if (shouldUseDevClient && !hasBuiltClient) {
 	const { createServer } = await import("vite");
 	const vite = await createServer({
 		root: publicPath,
@@ -65,16 +65,25 @@ if (isDevelopment) {
 		appType: "spa",
 	});
 	app.use(vite.middlewares);
-} else {
+} else if (hasBuiltClient) {
 	app.use("/cards", express.static(path.join(publicPath, "cards")));
 	app.use("/img", express.static(path.join(publicPath, "img")));
 	app.use(express.static(publicPath));
+} else {
+	app.get("/", (_request, response) => {
+		response.send("CardsMP backend is running. Frontend is hosted separately.");
+	});
 }
 
 app.get("/games/:roomCode", (request, response) => {
 	const roomCode = request.params.roomCode as string;
 	if (!/^[A-Z0-9]{4}$/.test(roomCode))
 		return response.status(404).send("Invalid room code format");
+
+	if (!shouldUseDevClient && !hasBuiltClient) {
+		return response.status(404).send("Frontend is hosted separately");
+	}
+
 	response.sendFile("index.html", { root: publicPath });
 });
 
@@ -167,23 +176,39 @@ function isAllowedOrigin(
 }
 
 function getAllowedOrigins(): Set<string> {
-	const configured = process.env.ALLOWED_ORIGINS;
-	if (configured) {
-		return new Set(
-			configured
-				.split(",")
-				.map((origin) => origin.trim())
-				.filter(Boolean),
-		);
-	}
-
-	return new Set([
+	const origins = new Set([
+		"https://lualum.github.io",
 		"https://cardsmp.duckdns.org",
 		`http://localhost:${config.clientPort}`,
 		`http://127.0.0.1:${config.clientPort}`,
 		`http://localhost:${config.serverPort}`,
 		`http://127.0.0.1:${config.serverPort}`,
 	]);
+
+	addConfiguredOrigins(origins, process.env.FRONTEND_ORIGIN);
+	addConfiguredOrigins(origins, process.env.ALLOWED_ORIGINS);
+
+	return origins;
+}
+
+function addConfiguredOrigins(origins: Set<string>, value: string | undefined): void {
+	if (!value) return;
+
+	for (const rawOrigin of value.split(",")) {
+		const origin = normalizeOrigin(rawOrigin);
+		if (origin) origins.add(origin);
+	}
+}
+
+function normalizeOrigin(rawOrigin: string): string | undefined {
+	const trimmed = rawOrigin.trim();
+	if (!trimmed) return undefined;
+
+	try {
+		return new URL(trimmed).origin;
+	} catch {
+		return trimmed.replace(/\/+$/, "");
+	}
 }
 
 function cleanupStaleProfiles(): void {

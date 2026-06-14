@@ -12,8 +12,9 @@ import {
 	makeBtn,
 	preloadCardImages,
 } from "./game-ui-utils";
+import { getAssetPath, getRoomInviteURL } from "./app-paths";
 
-const OPPONENT_CARD_BACK_PATH = "/cards/back.png";
+const OPPONENT_CARD_BACK_PATH = getAssetPath("cards/back.png");
 
 function isPlayersTurn(): boolean {
 	return gs.player.index === gs.room.game.currentIndex;
@@ -95,7 +96,7 @@ export function showRoomElements(): void {
 }
 
 async function copyRoomInviteLink(roomCode: string): Promise<void> {
-	const inviteLink = `${globalThis.location.origin}/games/${roomCode}`;
+	const inviteLink = getRoomInviteURL(roomCode);
 
 	try {
 		await globalThis.navigator.clipboard?.writeText(inviteLink);

@@ -1,5 +1,6 @@
 import { checkAndPromptForName } from "./menu-ui";
 import { sn } from "./session";
+import { getAppPathname, getBasePath, getRoomPath } from "./app-paths";
 
 export function checkURLForRoom(): void {
 	const roomCode = getRoomCodeFromPath();
@@ -18,15 +19,17 @@ export function checkURLForRoom(): void {
 }
 
 export function updateURL(roomCode: string): void {
-	globalThis.history.replaceState({}, "", `/games/${roomCode}`);
+	globalThis.history.replaceState({}, "", getRoomPath(roomCode));
 }
 
 export function clearRoomURL(): void {
-	globalThis.history.replaceState({}, "", "/");
+	globalThis.history.replaceState({}, "", getBasePath());
 }
 
 function getRoomCodeFromPath(): string | undefined {
-	// Extract room code from path like /games/ABCD
-	const pathParts = globalThis.location.pathname.split("/");
-	return pathParts[2];
+	const pathParts = getAppPathname()
+		.split("/")
+		.filter(Boolean);
+
+	return pathParts[0] === "games" ? pathParts[1] : undefined;
 }
