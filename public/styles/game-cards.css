@@ -1,6 +1,4 @@
-.game-field-bidding,
-#table-center-message .game-field-bidding,
-#table-center-message {
+#table-container {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -8,8 +6,8 @@
 	z-index: 1;
 	box-sizing: border-box;
 	background: rgba(26, 29, 33, 0.96);
-	width: 600px;
-	height: 280px;
+	width: var(--table-width);
+	height: var(--table-message-height);
 }
 
 .game-field-cards {
@@ -17,27 +15,15 @@
 	flex-direction: row;
 	align-items: center;
 	z-index: 1;
-	padding-left: 30px;
+	padding-left: var(--table-pad-x);
 }
 
-.game-field-combination-text {
-	position: absolute;
-	right: 25px;
-	bottom: 21px;
-	align-items: center;
-	color: var(--text-primary);
-	font-weight: 500;
-	font-size: 14px;
-	line-height: 20px;
-	letter-spacing: 0.15px;
-}
-
-#table-center-message {
+#table-container {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
-	gap: 8px;
-	padding: 21px 25px;
+	gap: var(--card-gap);
+	padding: var(--table-pad-y) var(--table-pad-x);
 	pointer-events: none;
 }
 
@@ -47,7 +33,7 @@
 	justify-content: center;
 	align-items: center;
 	margin: auto 0;
-	gap: 8px;
+	gap: var(--card-gap);
 	width: 100%;
 	height: var(--card-height);
 	min-height: var(--card-height);
@@ -64,7 +50,7 @@
 	display: block;
 	flex: 0 0 var(--card-width);
 	margin-left: 0;
-	border-radius: 6px;
+	border-radius: clamp(4px, calc(var(--card-width) * 0.0588), 8px);
 	background: transparent;
 	width: var(--card-width);
 	height: var(--card-height);
@@ -93,7 +79,7 @@
 	transform: none;
 	z-index: 6;
 	box-sizing: border-box;
-	width: 100%;
+	width: min(100%, var(--hand-size));
 	max-width: 100%;
 	height: var(--card-height);
 }
@@ -119,63 +105,25 @@
 	overflow: visible;
 }
 
-#card-hand-area[data-layout-mode="overlap"] .hand-card + .hand-card,
-.game-card-hand[data-layout-mode="overlap"] .game-card + .game-card {
-	margin-left: calc(var(--hand-overlap, 0px) * -1);
-}
-
 .hand-card:hover {
-	transform: translateY(-2px);
+	transform: translateY(calc(var(--hover-card-lift) * -1));
 }
 
 .hand-card.selected,
 .card-selected {
-	transform: translateY(-24px) !important;
+	transform: translateY(calc(var(--selected-card-lift) * -1)) !important;
 }
 
 .hand-card.selected:hover,
 .card-selected:hover {
-	transform: translateY(-24px) !important;
+	transform: translateY(calc(var(--selected-card-lift) * -1)) !important;
 }
 
 .hand-card-face {
 	display: block;
-
 	background: transparent;
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
 	pointer-events: none;
-}
-
-.hand-card:hover .hand-card-face {
-	box-shadow: none;
-}
-
-.hand-card.selected .hand-card-face {
-	box-shadow: none;
-}
-
-#game-actions,
-.game-actions-container,
-#action-buttons {
-	display: flex;
-	position: relative;
-	right: auto;
-	left: auto;
-	flex: 1 1 auto;
-	flex-direction: row;
-	justify-content: center;
-	align-items: center;
-	gap: 8px;
-	z-index: 10;
-	box-sizing: border-box;
-	padding: 0 20px;
-	width: 100%;
-	height: 100%;
-	pointer-events: none;
-}
-
-#action-buttons > * {
-	pointer-events: auto;
 }

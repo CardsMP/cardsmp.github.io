@@ -38,37 +38,138 @@ function getSelectedCardObjects(): Card[] {
 	);
 }
 
+function isPlayerInCurrentRound(player: Player): boolean {
+	return gs.room.game.players.some(
+		(gamePlayer) => gamePlayer.id === player.id,
+	);
+}
+
+function isCurrentPlayerInRound(): boolean {
+	return gs.room.game.players.some(
+		(gamePlayer) => gamePlayer.id === gs.player.id,
+	);
+}
+
 function applyCardRowLayout(
 	container: HTMLElement,
 	totalCards: number,
-	overlapVar: string,
+	overlapVar?: string,
 ): void {
-	const styles = getComputedStyle(container);
-	const cardWidth =
-		Number.parseFloat(styles.getPropertyValue("--card-width")) || 102;
-	const defaultGap =
-		Number.parseFloat(styles.getPropertyValue("--card-gap")) || 8;
+	const cardWidth = getCardLayoutWidth(container);
+	const preferredGap = getCardLayoutGap(container);
 	const availableWidth =
 		container.clientWidth || container.getBoundingClientRect().width;
-	const naturalWidth =
-		totalCards * cardWidth + Math.max(0, totalCards - 1) * defaultGap;
+	const gapCount = Math.max(0, totalCards - 1);
+	const cardWidthTotal = totalCards * cardWidth;
+	const preferredWidth = cardWidthTotal + gapCount * preferredGap;
 
-	if (totalCards > 1 && naturalWidth > availableWidth) {
+	if (totalCards <= 0 || availableWidth <= 0) {
+		container.dataset.layoutMode = "gap";
+		if (overlapVar) {
+			container.style.setProperty(overlapVar, "0px");
+		} else {
+			applyInlineCardOverlap(container, 0);
+		}
+		container.style.gap = `${preferredGap}px`;
+		container.style.justifyContent = "center";
+		return;
+	}
+
+	if (gapCount > 0 && cardWidthTotal > availableWidth) {
 		const overlap =
 			Math.min(
 				cardWidth - 1,
-				(naturalWidth - availableWidth) / (totalCards - 1),
+				(cardWidthTotal - availableWidth) / gapCount,
 			) || 0;
 		container.dataset.layoutMode = "overlap";
-		container.style.setProperty(overlapVar, `${overlap}px`);
+		if (overlapVar) {
+			container.style.setProperty(overlapVar, `${overlap}px`);
+		} else {
+			applyInlineCardOverlap(container, overlap);
+		}
 		container.style.gap = "0px";
 	} else {
-		container.dataset.layoutMode = "gap";
-		container.style.setProperty(overlapVar, "0px");
-		container.style.gap = `${defaultGap}px`;
+		const gap =
+			gapCount > 0
+				? Math.min(
+						preferredGap,
+						(availableWidth - cardWidthTotal) / gapCount,
+					)
+				: preferredGap;
+
+		container.dataset.layoutMode =
+			gapCount > 0 && preferredWidth > availableWidth ? "fit-gap" : "gap";
+		if (overlapVar) {
+			container.style.setProperty(overlapVar, "0px");
+		} else {
+			applyInlineCardOverlap(container, 0);
+		}
+		container.style.gap = `${Math.max(0, gap)}px`;
 	}
 
 	container.style.justifyContent = "center";
+}
+
+function getCardLayoutWidth(container: HTMLElement): number {
+	for (const child of [...container.children]) {
+		if (!(child instanceof HTMLElement)) continue;
+
+		const measuredWidth = child.getBoundingClientRect().width;
+		if (Number.isFinite(measuredWidth) && measuredWidth > 0)
+			return measuredWidth;
+
+		const computedWidth = Number.parseFloat(getComputedStyle(child).width);
+		if (Number.isFinite(computedWidth) && computedWidth > 0)
+			return computedWidth;
+	}
+
+	const parsedCardWidth = Number.parseFloat(
+		getComputedStyle(container).getPropertyValue("--card-width"),
+	);
+	return Math.max(
+		1,
+		Number.isFinite(parsedCardWidth) ? parsedCardWidth : 102,
+	);
+}
+
+function getCardLayoutGap(container: HTMLElement): number {
+	const styles = getComputedStyle(container);
+	const computedGap = Number.parseFloat(styles.columnGap || styles.gap);
+	if (Number.isFinite(computedGap)) return Math.max(0, computedGap);
+
+	const parsedGap = Number.parseFloat(styles.getPropertyValue("--card-gap"));
+	return Math.max(0, Number.isFinite(parsedGap) ? parsedGap : 8);
+}
+
+function applyInlineCardOverlap(container: HTMLElement, overlap: number): void {
+	for (const [index, child] of [...container.children].entries()) {
+		if (!(child instanceof HTMLElement)) continue;
+		child.style.marginLeft =
+			index > 0 && overlap > 0 ? `${overlap * -1}px` : "0px";
+	}
+}
+
+export function refreshCardLayouts(): void {
+	const handArea = document.querySelector(
+		"#card-hand-area",
+	) as HTMLElement | null;
+	if (handArea) applyCardRowLayout(handArea, handArea.childElementCount);
+
+	for (const opponentHand of document.querySelectorAll<HTMLElement>(
+		".opponent-hand",
+	)) {
+		applyCardRowLayout(opponentHand, opponentHand.childElementCount);
+	}
+
+	for (const tableCards of document.querySelectorAll<HTMLElement>(
+		".table-played-cards",
+	)) {
+		applyCardRowLayout(
+			tableCards,
+			tableCards.childElementCount,
+			"--table-overlap",
+		);
+	}
 }
 
 export function showRoomElements(): void {
@@ -153,13 +254,12 @@ export function updateUIGame(): void {
 function renderNameplates(): void {
 	if (!gs.room || !gs.player) return;
 
-	for (const el of document.querySelectorAll(".player-seat"))
-		el.remove();
+	for (const el of document.querySelectorAll(".player-seat")) el.remove();
 
 	for (const el of document.querySelectorAll(".player-nameplate"))
 		el.remove();
 
-	const gameTable = document.querySelector("#game-area-table") as HTMLElement;
+	const gameTable = document.querySelector("#field-area") as HTMLElement;
 	const seatedPlayers = getSeatedPlayers();
 
 	for (let rel = 0; rel < 4; rel++) {
@@ -167,25 +267,34 @@ function renderNameplates(): void {
 		const seatEl = document.createElement("div");
 		seatEl.className = `player-seat ${getNameplatePositionClass(rel)}${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
 
+		const seatStack = document.createElement("div");
+		seatStack.className = "player-seat-stack";
+
 		const plate = document.createElement("div");
 		plate.className = `player-nameplate${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
 		let opponentHand: HTMLElement | undefined;
+		let ownHand: HTMLElement | undefined;
 
 		if (player) {
 			const game = gs.room.game;
+			const isInCurrentRound = isPlayerInCurrentRound(player);
 			const isTurn =
-				game?.players?.length > 0 && game.currentIndex === player.index;
+				isInCurrentRound && game.currentIndex === player.index;
 			const isLandlord = game?.landlord?.id === player.id;
 			const cardCount = player.handCount ?? player.hand.cards.length;
 			const seat = player.index ?? rel;
 			const name = player.name || `P${seat + 1}`;
-			const hasDetail = game?.players?.length > 0;
-			const detail = hasDetail ? `${cardCount} cards left` : "";
+			const hasRound = game?.players?.length > 0;
+			const detail = isInCurrentRound
+				? `${cardCount} cards left`
+				: hasRound
+					? "Next round"
+					: "";
 
 			plate.classList.add(
 				...[
 					isTurn ? "is-turn" : "",
-					hasDetail ? "has-detail" : "no-detail",
+					detail ? "has-detail" : "no-detail",
 				].filter(Boolean),
 			);
 
@@ -196,23 +305,37 @@ function renderNameplates(): void {
 				</div>
 			`;
 
-			if (rel !== 0 && hasDetail && cardCount > 0)
+			if (rel !== 0 && isInCurrentRound && cardCount > 0)
 				opponentHand = createOpponentHand(cardCount);
+			else if (rel === 0 && isInCurrentRound) ownHand = getOwnHandArea();
 		} else {
 			plate.innerHTML = "";
 		}
 
-		seatEl.append(plate);
-		if (opponentHand) seatEl.append(opponentHand);
+		const hand = ownHand ?? opponentHand;
+		if (hand)
+			seatEl.classList.add(
+				"has-card-hand",
+				ownHand ? "has-own-hand" : "has-opponent-hand",
+			);
+
+		seatStack.append(plate);
+		if (hand) seatStack.append(hand);
+		seatEl.append(seatStack);
 		gameTable.append(seatEl);
 
 		if (opponentHand)
-			applyCardRowLayout(
-				opponentHand,
-				opponentHand.childElementCount,
-				"--opponent-hand-overlap",
-			);
+			applyCardRowLayout(opponentHand, opponentHand.childElementCount);
 	}
+}
+
+function getOwnHandArea(): HTMLElement {
+	const existing = document.querySelector("#card-hand-area");
+	if (existing instanceof HTMLElement) return existing;
+
+	const hand = document.createElement("div");
+	hand.id = "card-hand-area";
+	return hand;
 }
 
 function createOpponentHand(cardCount: number): HTMLElement {
@@ -332,7 +455,7 @@ function renderTurnBanner(): void {
 }
 
 function renderTableMessage(): void {
-	const msg = document.querySelector("#table-center-message") as HTMLElement;
+	const msg = document.querySelector("#table-container") as HTMLElement;
 	if (!msg) return;
 
 	if (!gs.room || !gs.player) {
@@ -374,7 +497,11 @@ function renderTableMessage(): void {
 		footer.textContent = type;
 
 		msg.append(title, cards, footer);
-		applyCardRowLayout(cards, game.lastPlay.cards.length, "--table-overlap");
+		applyCardRowLayout(
+			cards,
+			game.lastPlay.cards.length,
+			"--table-overlap",
+		);
 	} else if (game.phase === GamePhase.FINISHED) {
 		msg.classList.remove("is-empty");
 		msg.textContent = "Round over. Anyone can reset the round.";
@@ -394,9 +521,6 @@ export function renderCardHand(): void {
 
 	const myPlayer = game.players[gs.player.index];
 	if (!myPlayer) return;
-
-	const totalCards = myPlayer.hand.cards.length;
-	applyCardRowLayout(handArea, totalCards, "--hand-overlap");
 
 	const currentKeys = new Set(
 		myPlayer.hand.cards.map((card) => getCardKey(card)),
@@ -433,6 +557,8 @@ export function renderCardHand(): void {
 		el.style.zIndex = "1";
 		handArea.append(el);
 	}
+
+	applyCardRowLayout(handArea, handArea.childElementCount);
 }
 
 function createTableCardImage(card: Card): HTMLImageElement {
@@ -452,6 +578,13 @@ function renderActionButtons(): void {
 	const game = gs.room.game;
 	if (!game) return;
 
+	if (game.phase !== GamePhase.FINISHED && !isCurrentPlayerInRound()) {
+		const waitingBtn = makeBtn("Waiting for next round", "", () => {});
+		waitingBtn.disabled = true;
+		container.append(waitingBtn);
+		return;
+	}
+
 	const isTurn = isPlayersTurn();
 
 	switch (game.phase) {
@@ -468,7 +601,7 @@ function renderActionButtons(): void {
 				needsPlayersBtn.disabled = true;
 				container.append(needsPlayersBtn);
 			} else {
-				const resetBtn = makeBtn("Reset Round", "", () =>
+				const resetBtn = makeBtn("Start Round", "", () =>
 					gs.socket.emit("reset-room"),
 				);
 				container.append(resetBtn);

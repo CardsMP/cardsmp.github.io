@@ -3,14 +3,14 @@
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	gap: 16px;
+	gap: calc(var(--game-control-height) / 3);
 	z-index: 10;
 	box-sizing: border-box;
-
 	background: #0d0f10;
-	padding: 12px 16px;
+	padding: calc(var(--game-control-height) / 4)
+		calc(var(--game-control-height) / 3);
 	width: fit-content;
-	height: 48px;
+	height: var(--game-control-height);
 	color: #fff;
 	font-weight: 400;
 	font-size: 12px;
@@ -29,15 +29,14 @@
 	z-index: 1;
 	box-sizing: border-box;
 	background: #00597b;
-	width: 600px;
-	height: 360px;
+	width: var(--table-width);
+	height: var(--table-height);
 }
 
 .game-field-text {
 	display: flex;
 	position: absolute;
-	top: 21px;
-	left: 25px;
+	padding: var(--game-area-gap);
 	align-items: center;
 	margin: 0;
 	color: var(--text-secondary);
@@ -53,7 +52,7 @@
 	justify-content: center;
 	align-items: center;
 	z-index: 1;
-	padding-top: 189px;
+	padding-top: var(--table-center-pad-top);
 	color: var(--text-secondary);
 	font-weight: 500;
 	font-size: 18px;
@@ -67,9 +66,18 @@
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
 	z-index: 5;
 	pointer-events: none;
+}
+
+.player-seat-stack {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: var(--nameplate-gap);
+	width: 100%;
+	max-width: 100%;
 }
 
 .player-seat.is-own {
@@ -77,9 +85,11 @@
 }
 
 .player-seat.nameplate-own {
-	bottom: 0;
+	top: calc(100% - ((100% - var(--table-message-height)) / 4));
 	left: 50%;
-	transform: translateX(-50%);
+	width: max(var(--opponent-hand-min-width), var(--hand-size));
+	min-width: var(--opponent-hand-min-width);
+	transform: translate(-50%, -50%);
 }
 
 .player-seat.nameplate-right {
@@ -87,7 +97,7 @@
 	left: calc(75% + (var(--table-width) / 4));
 	width: max(
 		var(--opponent-hand-min-width),
-		calc((100% - var(--table-width)) / 2)
+		min(var(--opponent-hand-size), calc((100% - var(--table-width)) / 2))
 	);
 	transform: translate(-50%, -50%);
 }
@@ -97,18 +107,19 @@
 	left: calc(25% - (var(--table-width) / 4));
 	width: max(
 		var(--opponent-hand-min-width),
-		calc((100% - var(--table-width)) / 2)
+		min(var(--opponent-hand-size), calc((100% - var(--table-width)) / 2))
 	);
 	transform: translate(-50%, -50%);
 }
 
 .player-seat.nameplate-top {
-	top: 0;
-	right: var(--opponent-hand-edge-inset);
-	left: var(--opponent-hand-edge-inset);
+	top: calc((100% - var(--table-message-height)) / 4);
+	left: 50%;
 	flex-direction: column;
 	align-items: center;
+	width: max(var(--opponent-hand-min-width), var(--opponent-hand-size));
 	min-width: var(--opponent-hand-min-width);
+	transform: translate(-50%, -50%);
 }
 
 .player-nameplate {
@@ -117,11 +128,12 @@
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	gap: 4px;
-	background: rgba(166, 176, 242, 0.2);
-	padding: 16px 24px;
+	gap: var(--nameplate-gap);
+	background: rgba(45, 51, 67, 0.846);
+	backdrop-filter: blur(6px);
+	padding: var(--nameplate-pad-y) var(--nameplate-pad-x);
 	width: auto;
-	min-width: 80px;
+	min-width: var(--nameplate-min-width);
 	height: auto;
 	pointer-events: none;
 	text-align: center;
@@ -131,13 +143,39 @@
 	gap: 0;
 }
 
+.player-seat.has-card-hand .player-nameplate {
+	z-index: 2;
+	max-width: calc(100% - 16px);
+	pointer-events: none;
+}
+
+.player-seat.has-card-hand .nameplate-inner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.player-seat.has-card-hand .nameplate-name,
+.player-seat.has-card-hand .nameplate-cards {
+	min-width: 0;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.player-seat.is-own #card-hand-area {
+	pointer-events: auto;
+}
+
 .player-nameplate.is-empty {
 	background: transparent;
 	padding: 0;
-	width: 60px;
-	min-width: 60px;
-	height: 60px;
-	min-height: 60px;
+	width: var(--empty-seat-size);
+	min-width: var(--empty-seat-size);
+	height: var(--empty-seat-size);
+	min-height: var(--empty-seat-size);
 }
 
 .player-nameplate.is-empty::before {
@@ -162,7 +200,7 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
+	gap: var(--card-gap);
 	width: 100%;
 	color: var(--text-primary);
 	font-weight: 700;
@@ -187,14 +225,10 @@
 	justify-content: center;
 	align-items: center;
 	gap: var(--card-gap);
-	width: 100%;
+	width: min(100%, var(--opponent-hand-size));
 	max-width: 100%;
 	height: var(--card-height);
 	overflow: visible;
-}
-
-.opponent-hand[data-layout-mode="overlap"] .opponent-hand-card + .opponent-hand-card {
-	margin-left: calc(var(--opponent-hand-overlap, 0px) * -1);
 }
 
 .opponent-hand-card {
@@ -217,40 +251,6 @@
 	object-fit: contain;
 	pointer-events: none;
 }
-.game-player-active-icon {
-	position: absolute;
-	top: 20px;
-	left: -6px;
-	clip-path: polygon(0 50%, 100% 0, 100% 100%);
-	background: var(--cyan);
-	width: 14px;
-	height: 14px;
-}
-
-.game-player-passed-icon {
-	position: absolute;
-	top: 20px;
-	left: -6px;
-	z-index: 1;
-	clip-path: polygon(
-		20% 0%,
-		0% 20%,
-		30% 50%,
-		0% 80%,
-		20% 100%,
-		50% 70%,
-		80% 100%,
-		100% 80%,
-		70% 50%,
-		100% 20%,
-		80% 0%,
-		50% 30%
-	);
-	background: red;
-	width: 14px;
-	height: 14px;
-	color: red;
-}
 
 .game-player-landlord-icon {
 	display: flex;
@@ -261,9 +261,9 @@
 	border: 1.5px solid #e2b42b;
 	border-radius: 6px;
 	background: #391c08;
-	padding: 0 6px;
-	width: 45px;
-	height: 24px;
+	padding: 0 var(--landlord-badge-pad-x);
+	width: var(--landlord-badge-width);
+	height: var(--landlord-badge-height);
 	color: #e2b42b;
 	font-weight: 600;
 	font-size: 14px;
@@ -273,7 +273,6 @@
 
 .game-player-you {
 	position: absolute;
-	top: 384px;
 	left: 50%;
 	transform: translate(-50%);
 }
@@ -281,13 +280,11 @@
 .game-player-right {
 	position: absolute;
 	top: 50%;
-	left: 624px;
 	transform: translateY(-50%);
 }
 
 .game-player-top {
 	position: absolute;
-	bottom: 384px;
 	left: 50%;
 	transform: translate(-50%);
 }
@@ -295,6 +292,5 @@
 .game-player-left {
 	position: absolute;
 	top: 50%;
-	right: 624px;
 	transform: translateY(-50%);
 }

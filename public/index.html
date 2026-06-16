@@ -8,6 +8,7 @@
 	<link rel="stylesheet" href="/styles/base.css" />
 	<link rel="stylesheet" href="/styles/menu.css" />
 	<link rel="stylesheet" href="/styles/game-layout.css" />
+	<link rel="stylesheet" href="/styles/game-actions.css" />
 	<link rel="stylesheet" href="/styles/game-table.css" />
 	<link rel="stylesheet" href="/styles/game-cards.css" />
 	<link rel="stylesheet" href="/styles/game-sidebar.css" />
@@ -87,20 +88,20 @@
 				<input type="text" id="chat-input" placeholder="Say something!" maxlength="200" />
 			</div>
 		</div>
+		<div id="sidebar-resizer" role="separator" aria-label="Resize sidebar" aria-controls="game-sidebar"
+			aria-orientation="vertical" tabindex="0"></div>
 
 		<!-- CENTER: Game Area (table + cards) -->
 		<div id="game-area">
 			<div id="notification-area">
 				<div id="turn-banner" class="game-top-notification" style="display:none;"></div>
 			</div>
-			<div id="game-area-table">
-				<div id="table-center-message"></div>
+
+			<div id="field-area">
+				<div id="table-container"></div>
 			</div>
 
-			<div id="card-hand-area"></div>
-			<div id="action-area">
-				<div id="action-buttons"></div>
-			</div>
+			<div id="action-buttons"></div>
 		</div>
 
 	</div>

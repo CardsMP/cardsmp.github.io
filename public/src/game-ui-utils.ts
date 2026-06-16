@@ -7,8 +7,7 @@ const preloadedImages = new Set<string>();
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
 
-	for (const el of document.querySelectorAll(".player-seat"))
-		el.remove();
+	for (const el of document.querySelectorAll(".player-seat")) el.remove();
 
 	for (const el of document.querySelectorAll(".player-nameplate"))
 		el.remove();
@@ -22,7 +21,7 @@ export function clearGameArea(): void {
 	const banner = document.querySelector("#turn-banner") as HTMLElement;
 	if (banner) banner.style.display = "none";
 
-	const msg = document.querySelector("#table-center-message") as HTMLElement;
+	const msg = document.querySelector("#table-container") as HTMLElement;
 	if (msg) {
 		msg.classList.add("is-empty");
 		msg.innerHTML = "";

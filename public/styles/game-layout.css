@@ -12,8 +12,42 @@
 	display: flex;
 	flex: 1;
 	flex-direction: column;
-	gap: 24px;
-	padding: 24px 0;
+	container-type: size;
+
+	--game-area-gap: 2cqh;
+	--game-control-height: 5.5cqh;
+
+	--table-width: 40cqw;
+	--table-height: 40cqh;
+	--table-message-height: calc(var(--table-height) * 0.7778);
+
+	--card-height: min(15.8cqh, 13cqw);
+	--card-width: calc(var(--card-height) * 0.7183);
+	--card-gap: calc(var(--card-width) * 0.0784);
+	--opponent-hand-edge-inset: var(--card-gap);
+	--opponent-hand-min-width: calc(var(--card-width) * 1.8);
+	--hand-size: 90cqw;
+	--opponent-hand-size: 25cqw;
+
+	--nameplate-gap: calc(var(--card-height) * 0.0282);
+	--nameplate-pad-y: calc(var(--card-height) * 0.1127);
+	--nameplate-pad-x: calc(var(--card-width) * 0.2353);
+	--nameplate-min-width: calc(var(--card-width) * 0.7843);
+	--empty-seat-size: calc(var(--card-width) * 0.5882);
+
+	--landlord-badge-width: calc(var(--card-width) * 0.4412);
+	--landlord-badge-height: calc(var(--card-height) * 0.169);
+	--landlord-badge-pad-x: calc(var(--card-width) * 0.0588);
+
+	--table-pad-y: calc(var(--table-height) * 0.0583);
+	--table-pad-x: calc(var(--table-width) * 0.0417);
+	--table-center-pad-top: calc(var(--table-height) * 0.525);
+
+	--selected-card-lift: calc(var(--card-height) * 0.18);
+	--hover-card-lift: calc(var(--card-height) * 0.07);
+
+	gap: var(--game-area-gap);
+	padding: var(--game-area-gap) 0;
 	width: 100%;
 	min-width: 0;
 	height: 100vh;
@@ -21,21 +55,20 @@
 }
 
 #notification-area,
-#action-area {
+#action-buttons {
 	display: flex;
-	flex: 0 0 48px;
+	flex: 0 0 var(--game-control-height);
 	justify-content: center;
 	align-items: center;
-	min-height: 48px;
+	height: var(--game-control-height);
+	gap: var(--game-area-gap);
 	width: 100%;
 }
 
-#game-area-table {
+#field-area {
 	display: flex;
 	position: relative;
 	flex: 1 1 auto;
-	--table-width: 600px;
-	--table-height: 320px;
 	z-index: 1;
 	background: transparent;
 	min-height: 0;

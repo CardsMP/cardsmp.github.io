@@ -9,6 +9,7 @@ import { io, MENU_ROOM, rooms, gameSockets, profiles } from "./index";
 const ROOM_CODE_PATTERN = /^[A-Z0-9]{4}$/;
 const MAX_PLAY_CARDS = 40;
 const DISCONNECT_GRACE_MS = 15_000;
+const DISCONNECT_GRACE_SECONDS = Math.ceil(DISCONNECT_GRACE_MS / 1000);
 const pendingDisconnects = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function setupHandlers(socket: GameSocket): void {
@@ -286,15 +287,17 @@ function broadcastSystemChat(room: Room, message: string): void {
 function applyRoundScore(room: Room, landlordWon: boolean): void {
 	const roundScore = Math.max(1, room.game.bet);
 	const landlordId = room.game.landlord?.id;
+	const activePlayers = room.game.players;
+	const farmerCount = Math.max(0, activePlayers.length - 1);
 
-	for (const player of room.players.values()) {
+	for (const player of activePlayers) {
 		const won = landlordWon
 			? player.id === landlordId
 			: player.id !== landlordId;
 		if (!won && player.id === landlordId) {
-			player.score -= roundScore * (room.players.size - 1);
+			player.score -= roundScore * farmerCount;
 		} else if (won && player.id === landlordId) {
-			player.score += roundScore * (room.players.size - 1);
+			player.score += roundScore * farmerCount;
 		} else if (!won && player.id !== landlordId) {
 			player.score -= roundScore;
 		} else if (won && player.id !== landlordId) {
@@ -343,6 +346,9 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 
 	const playerInRoom = room.players.get(socket.player.id);
 	if (playerInRoom) {
+		const wasDisconnected =
+			playerInRoom.status === PlayerStatus.DISCONNECTED;
+
 		cancelPendingDisconnect(socket.player.id);
 		socket.leave(MENU_ROOM);
 		socket.join(code);
@@ -353,12 +359,18 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 		socket
 			.to(socket.room.code)
 			.emit("p-set-status", socket.player.id, PlayerStatus.NOT_READY);
-	} else {
-		if (room.status !== RoomStatus.LOBBY) {
-			socket.emit("error", "Game already in progress");
-			return;
-		}
 
+		if (
+			wasDisconnected &&
+			room.status === RoomStatus.PLAYING &&
+			isActiveGamePlayer(room, socket.player.id)
+		) {
+			broadcastSystemChat(
+				room,
+				`${socket.player.name || "A player"} has reconnected.`,
+			);
+		}
+	} else {
 		if (room.players.size >= MAX_ROOM_PLAYERS) {
 			socket.emit("error", "Room is full");
 			return;
@@ -375,6 +387,12 @@ function joinRoom(socket: GameSocket, io: Server, code: string): void {
 			socket.player.name,
 		);
 		socket.emit("joined-room", room.serialize(socket.player.id));
+		if (room.status === RoomStatus.PLAYING) {
+			broadcastSystemChat(
+				room,
+				`${socket.player.name || "A player"} joined and will play next round.`,
+			);
+		}
 	}
 }
 
@@ -398,13 +416,27 @@ function handleLobbyPlayerLeave(socket: GameSocket, room: Room): void {
 
 function handleGamePlayerDisconnect(socket: GameSocket, room: Room): void {
 	const player = room.players.get(socket.player.id);
-	if (player) {
-		player.status = PlayerStatus.DISCONNECTED;
-		socket
-			.to(room.code)
-			.emit("p-set-status", socket.player.id, PlayerStatus.DISCONNECTED);
-		scheduleDisconnectCleanup(socket.player.id, room.code);
+	if (!player) return;
+
+	if (!isActiveGamePlayer(room, socket.player.id)) {
+		room.removePlayer(socket.player.id);
+		socket.to(room.code).emit("p-left-room", socket.player.id);
+		return;
 	}
+
+	player.status = PlayerStatus.DISCONNECTED;
+	socket
+		.to(room.code)
+		.emit("p-set-status", socket.player.id, PlayerStatus.DISCONNECTED);
+	broadcastSystemChat(
+		room,
+		`${player.name || "A player"} has disconnected and must come back in ${DISCONNECT_GRACE_SECONDS} seconds.`,
+	);
+	scheduleDisconnectCleanup(socket.player.id, room.code);
+}
+
+function isActiveGamePlayer(room: Room, playerId: string): boolean {
+	return room.game.players.some((player) => player.id === playerId);
 }
 
 function scheduleDisconnectCleanup(playerId: string, roomCode: string): void {

@@ -1,8 +1,52 @@
 #game-sidebar {
 	display: flex;
+	flex: 0 0 var(--sidebar-width, 320px);
 	flex-direction: column;
 	background: rgba(15, 16, 18, 0.7);
-	width: 320px;
+	width: var(--sidebar-width, 320px);
+	min-width: 240px;
+	max-width: min(520px, 52vw);
+	overflow: hidden;
+}
+
+#sidebar-resizer {
+	display: flex;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: var(--sidebar-width, 320px);
+	justify-content: flex-start;
+	align-items: center;
+	z-index: 12;
+	outline: none;
+	background: transparent;
+	width: 12px;
+	cursor: col-resize;
+	touch-action: none;
+}
+
+#sidebar-resizer::before {
+	display: block;
+	transition:
+		background-color 120ms ease,
+		opacity 120ms ease;
+	background: var(--border-strong);
+	width: 1px;
+	height: 100%;
+	opacity: 0.5;
+	content: "";
+}
+
+#sidebar-resizer:hover::before,
+#sidebar-resizer:focus-visible::before,
+#sidebar-resizer.is-active::before {
+	background: var(--cyan);
+	opacity: 1;
+}
+
+body.is-resizing-sidebar {
+	cursor: col-resize;
+	user-select: none;
 }
 
 #sidebar-header {
