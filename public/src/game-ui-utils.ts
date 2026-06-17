@@ -1,11 +1,12 @@
 import { JOKER_RANK, TWO_RANK, type Card } from "@shared/card";
 import { getAssetPath } from "./app-paths";
-import { selectedCardKeys } from "./game-ui-state";
+import { selectedCardKeys, setPreMoveEnabled } from "./game-ui-state";
 
 const preloadedImages = new Set<string>();
 
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
+	setPreMoveEnabled(false);
 
 	for (const el of document.querySelectorAll(".player-seat")) el.remove();
 
@@ -22,11 +23,7 @@ export function clearGameArea(): void {
 	if (banner) banner.style.display = "none";
 
 	const msg = document.querySelector("#table-container") as HTMLElement;
-	if (msg) {
-		msg.classList.add("is-empty");
-		msg.innerHTML = "";
-		msg.style.display = "flex";
-	}
+	if (msg) msg.innerHTML = "";
 }
 
 export function escapeHtml(text: string): string {

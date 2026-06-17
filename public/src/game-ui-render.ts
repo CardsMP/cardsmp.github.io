@@ -3,7 +3,21 @@ import type { Player } from "@shared/player";
 import { GamePhase } from "@shared/game";
 import { MAX_ROOM_PLAYERS } from "@shared/room";
 import { gs } from "./session";
-import { getCardKey, selectedCardKeys } from "./game-ui-state";
+import {
+	canPass,
+	getSelectedCardObjects,
+	isPlayersTurn,
+	passTurn,
+	playSelectedCards,
+	tryPreMoveCurrentTurn,
+} from "./game-ui-actions";
+import {
+	getCardKey,
+	isPreMoveEnabled,
+	selectedCardKeys,
+	setPreMoveEnabled,
+	togglePreMoveEnabled,
+} from "./game-ui-state";
 import {
 	clearGameArea,
 	escapeHtml,
@@ -15,28 +29,6 @@ import {
 import { getAssetPath, getRoomInviteURL } from "./app-paths";
 
 const OPPONENT_CARD_BACK_PATH = getAssetPath("cards/back.png");
-
-function isPlayersTurn(): boolean {
-	return gs.player.index === gs.room.game.currentIndex;
-}
-
-function canPass(): boolean {
-	const game = gs.room.game;
-	return (
-		game.phase === GamePhase.PLAYING &&
-		!!game.lastPlay &&
-		game.lastPlay.playerIndex !== gs.player.index
-	);
-}
-
-function getSelectedCardObjects(): Card[] {
-	const myPlayer = gs.room.game.players[gs.player.index ?? 0];
-	if (!myPlayer) return [];
-
-	return myPlayer.hand.cards.filter((card) =>
-		selectedCardKeys.has(getCardKey(card)),
-	);
-}
 
 function isPlayerInCurrentRound(player: Player): boolean {
 	return gs.room.game.players.some(
@@ -249,6 +241,7 @@ export function updateUIGame(): void {
 	renderTurnBanner();
 	renderTableMessage();
 	updateGameInfoUI();
+	runReadyPreMove();
 }
 
 function renderNameplates(): void {
@@ -266,9 +259,6 @@ function renderNameplates(): void {
 		const player = seatedPlayers[rel];
 		const seatEl = document.createElement("div");
 		seatEl.className = `player-seat ${getNameplatePositionClass(rel)}${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
-
-		const seatStack = document.createElement("div");
-		seatStack.className = "player-seat-stack";
 
 		const plate = document.createElement("div");
 		plate.className = `player-nameplate${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
@@ -299,10 +289,8 @@ function renderNameplates(): void {
 			);
 
 			plate.innerHTML = `
-				<div class="nameplate-inner">
-					<div class="nameplate-name">${escapeHtml(name)}${player.id === gs.player.id ? " (You)" : ""}${isLandlord ? '<span class="landlord-indicator">L</span>' : ""}</div>
-					${detail ? `<div class="nameplate-cards">${detail}</div>` : ""}
-				</div>
+				<div class="nameplate-name">${escapeHtml(name)}${player.id === gs.player.id ? " (You)" : ""}${isLandlord ? '<span class="landlord-indicator">L</span>' : ""}</div>
+				${detail ? `<div class="nameplate-cards">${detail}</div>` : ""}
 			`;
 
 			if (rel !== 0 && isInCurrentRound && cardCount > 0)
@@ -319,9 +307,8 @@ function renderNameplates(): void {
 				ownHand ? "has-own-hand" : "has-opponent-hand",
 			);
 
-		seatStack.append(plate);
-		if (hand) seatStack.append(hand);
-		seatEl.append(seatStack);
+		seatEl.append(plate);
+		if (hand) seatEl.append(hand);
 		gameTable.append(seatEl);
 
 		if (opponentHand)
@@ -345,10 +332,10 @@ function createOpponentHand(cardCount: number): HTMLElement {
 
 	for (let index = 0; index < cardCount; index++) {
 		const card = document.createElement("div");
-		card.className = "opponent-hand-card";
+		card.className = "hand-card";
 
 		const img = document.createElement("img");
-		img.className = "opponent-card-back";
+		img.className = "hand-card-face";
 		img.src = OPPONENT_CARD_BACK_PATH;
 		img.alt = "";
 		img.draggable = false;
@@ -552,6 +539,7 @@ export function renderCardHand(): void {
 				selectedCardKeys.add(cardKey);
 				el.classList.add("selected");
 			}
+			renderActionButtons();
 		});
 
 		el.style.zIndex = "1";
@@ -638,27 +626,49 @@ function renderActionButtons(): void {
 		}
 
 		case GamePhase.PLAYING: {
-			if (!isTurn) break;
-
 			const playBtn = makeBtn("Play", "", () => {
-				const cards = getSelectedCardObjects();
-				if (cards.length === 0) return;
-				gs.socket.emit("play-cards", cards);
-				selectedCardKeys.clear();
-				renderCardHand();
+				if (playSelectedCards()) {
+					renderCardHand();
+					renderActionButtons();
+				}
 			});
 			const passBtn = makeBtn("Pass", "", () => {
-				if (!canPass()) return;
-				gs.socket.emit("play-cards", []);
-				selectedCardKeys.clear();
-				renderCardHand();
+				if (passTurn()) {
+					renderCardHand();
+					renderActionButtons();
+				}
 			});
+			playBtn.disabled = !isTurn || getSelectedCardObjects().length === 0;
 			passBtn.disabled = !canPass();
 
-			container.append(playBtn, passBtn);
+			if (isTurn) container.append(playBtn, passBtn);
+			else container.append(createPreMoveButton());
 			break;
 		}
 	}
+}
+
+function createPreMoveButton(): HTMLButtonElement {
+	const hasSelectedCards = getSelectedCardObjects().length > 0;
+	const label = hasSelectedCards ? "Pre-play" : "Pre-pass";
+
+	const preMoveBtn = makeBtn(label, "btn-preplay", () => {
+		const enabled = togglePreMoveEnabled();
+		if (enabled && tryPreMoveCurrentTurn()) {
+			renderCardHand();
+		}
+		renderActionButtons();
+	});
+	const enabled = isPreMoveEnabled();
+	preMoveBtn.classList.toggle("is-active", enabled);
+	preMoveBtn.setAttribute("aria-pressed", String(enabled));
+	return preMoveBtn;
+}
+
+function runReadyPreMove(): void {
+	if (!tryPreMoveCurrentTurn()) return;
+	renderCardHand();
+	renderActionButtons();
 }
 
 function updateGameInfoUI(): void {
@@ -693,10 +703,12 @@ function updateGameInfoUI(): void {
 
 export function startGameUI(): void {
 	selectedCardKeys.clear();
+	setPreMoveEnabled(false);
 	updateUIGame();
 }
 
 export function endGameUI(): void {
 	selectedCardKeys.clear();
+	setPreMoveEnabled(false);
 	updateUIGame();
 }

@@ -1,53 +1,13 @@
-import { GamePhase } from "@shared/game";
-import { gs } from "./session";
 import { renderCardHand } from "./game-ui-render";
-import { getCardKey, selectedCardKeys } from "./game-ui-state";
+import { passTurn, playSelectedCards } from "./game-ui-actions";
 import { sendChatMessage } from "./game-ui-chat";
 
 function handlePlayCards(): void {
-	if (!isPlayersTurn()) return;
-
-	const cards = getSelectedCardObjects();
-	if (cards.length === 0) {
-		return;
-	}
-
-	gs.socket.emit("play-cards", cards);
-	selectedCardKeys.clear();
-	renderCardHand();
+	if (playSelectedCards()) renderCardHand();
 }
 
 function handlePass(): void {
-	if (!isPlayersTurn()) return;
-	if (!canPass()) {
-		return;
-	}
-
-	gs.socket.emit("play-cards", []);
-	selectedCardKeys.clear();
-	renderCardHand();
-}
-
-function isPlayersTurn(): boolean {
-	return gs.player.index === gs.room.game.currentIndex;
-}
-
-function canPass(): boolean {
-	const game = gs.room.game;
-	return (
-		game.phase === GamePhase.PLAYING &&
-		!!game.lastPlay &&
-		game.lastPlay.playerIndex !== gs.player.index
-	);
-}
-
-function getSelectedCardObjects() {
-	const myPlayer = gs.room.game.players[gs.player.index ?? 0];
-	if (!myPlayer) return [];
-
-	return myPlayer.hand.cards.filter((card) =>
-		selectedCardKeys.has(getCardKey(card)),
-	);
+	if (passTurn()) renderCardHand();
 }
 
 export function initGameControls(): void {

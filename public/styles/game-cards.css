@@ -1,43 +1,14 @@
-#table-container {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	z-index: 1;
-	box-sizing: border-box;
-	background: rgba(26, 29, 33, 0.96);
-	width: var(--table-width);
-	height: var(--table-message-height);
-}
-
-.game-field-cards {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	z-index: 1;
-	padding-left: var(--table-pad-x);
-}
-
-#table-container {
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	gap: var(--card-gap);
-	padding: var(--table-pad-y) var(--table-pad-x);
-	pointer-events: none;
-}
-
 .table-played-cards {
 	display: flex;
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
-	margin: auto 0;
 	gap: var(--card-gap);
+	margin: auto 0;
 	width: 100%;
+	max-width: 100%;
 	height: var(--card-height);
 	min-height: var(--card-height);
-	max-width: 100%;
 }
 
 .table-played-cards[data-layout-mode="overlap"]
@@ -109,13 +80,11 @@
 	transform: translateY(calc(var(--hover-card-lift) * -1));
 }
 
-.hand-card.selected,
-.card-selected {
+.hand-card.selected {
 	transform: translateY(calc(var(--selected-card-lift) * -1)) !important;
 }
 
-.hand-card.selected:hover,
-.card-selected:hover {
+.hand-card.selected:hover {
 	transform: translateY(calc(var(--selected-card-lift) * -1)) !important;
 }
 

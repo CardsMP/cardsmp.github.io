@@ -1,12 +1,21 @@
 import type { Card } from "@shared/card";
 
 export const selectedCardKeys: Set<string> = new Set();
+let preMoveEnabled = false;
 
 export function getCardKey(card: Card): string {
-	if (card.type === "Playing") {
-		return card.uid
-			? `Playing:${card.uid}`
-			: `Playing:${card.suit}:${card.rank}`;
-	}
-	return card.uid ? `Joker:${card.uid}` : `Joker:${card.color}`;
+	return card.uid ? `Card:${card.uid}` : `Card:${card.suit}:${card.rank}`;
+}
+
+export function isPreMoveEnabled(): boolean {
+	return preMoveEnabled;
+}
+
+export function setPreMoveEnabled(enabled: boolean): void {
+	preMoveEnabled = enabled;
+}
+
+export function togglePreMoveEnabled(): boolean {
+	preMoveEnabled = !preMoveEnabled;
+	return preMoveEnabled;
 }

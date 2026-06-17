@@ -15,36 +15,28 @@
 	container-type: size;
 
 	--game-area-gap: 2cqh;
-	--game-control-height: 5.5cqh;
+	--game-control-height: 5cqh;
+
+	--field-height: 40cqh;
 
 	--table-width: 40cqw;
-	--table-height: 40cqh;
-	--table-message-height: calc(var(--table-height) * 0.7778);
+	--table-height: 30cqh;
+	--table-padding: 3cqh;
 
-	--card-height: min(15.8cqh, 13cqw);
-	--card-width: calc(var(--card-height) * 0.7183);
-	--card-gap: calc(var(--card-width) * 0.0784);
-	--opponent-hand-edge-inset: var(--card-gap);
-	--opponent-hand-min-width: calc(var(--card-width) * 1.8);
-	--hand-size: 90cqw;
-	--opponent-hand-size: 25cqw;
-
-	--nameplate-gap: calc(var(--card-height) * 0.0282);
-	--nameplate-pad-y: calc(var(--card-height) * 0.1127);
-	--nameplate-pad-x: calc(var(--card-width) * 0.2353);
-	--nameplate-min-width: calc(var(--card-width) * 0.7843);
-	--empty-seat-size: calc(var(--card-width) * 0.5882);
-
-	--landlord-badge-width: calc(var(--card-width) * 0.4412);
-	--landlord-badge-height: calc(var(--card-height) * 0.169);
-	--landlord-badge-pad-x: calc(var(--card-width) * 0.0588);
-
-	--table-pad-y: calc(var(--table-height) * 0.0583);
-	--table-pad-x: calc(var(--table-width) * 0.0417);
-	--table-center-pad-top: calc(var(--table-height) * 0.525);
+	--card-height: 15cqh;
+	--card-width: calc(var(--card-height) * 352/512);
+	--card-gap: calc(var(--card-width) * 0.08);
 
 	--selected-card-lift: calc(var(--card-height) * 0.18);
 	--hover-card-lift: calc(var(--card-height) * 0.07);
+
+	--hand-size: 90cqw;
+	--opponent-hand-size: 25cqw;
+
+	--nameplate-gap: 1cqh;
+	--nameplate-padding: 1.5cqh;
+
+	--empty-seat-size: 5cqh;
 
 	gap: var(--game-area-gap);
 	padding: var(--game-area-gap) 0;
@@ -60,9 +52,28 @@
 	flex: 0 0 var(--game-control-height);
 	justify-content: center;
 	align-items: center;
-	height: var(--game-control-height);
 	gap: var(--game-area-gap);
 	width: 100%;
+	height: var(--game-control-height);
+}
+
+#turn-banner {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: calc(var(--game-control-height) / 3);
+	z-index: 10;
+	box-sizing: border-box;
+	background: #0d0f10;
+	padding: calc(var(--game-control-height) / 4)
+		calc(var(--game-control-height) / 3);
+	width: fit-content;
+	height: var(--game-control-height);
+	color: #fff;
+	font-weight: 400;
+	font-size: 12px;
+	line-height: 18px;
+	white-space: nowrap;
 }
 
 #field-area {
@@ -71,6 +82,7 @@
 	flex: 1 1 auto;
 	z-index: 1;
 	background: transparent;
-	min-height: 0;
+	width: 100%;
+	height: var(--field-height);
 	overflow: hidden;
 }

@@ -18,9 +18,6 @@
 	--background: #141619;
 	--border: rgba(255, 255, 255, 0.08);
 	--border-strong: rgba(255, 255, 255, 0.14);
-	--card-gap: 8px;
-	--opponent-hand-edge-inset: 8px;
-	--opponent-hand-min-width: 184px;
 
 	--text: rgba(255, 255, 255, 0.92);
 	--text-secondary: rgba(255, 255, 255, 0.5);
@@ -126,6 +123,17 @@ button:disabled {
 
 .btn-white-transparent:hover {
 	background: rgba(255, 255, 255, 0.18);
+}
+
+.btn-white-transparent.is-active,
+.btn-white-transparent[aria-pressed="true"] {
+	background: var(--cyan);
+	color: #0c1132;
+}
+
+.btn-white-transparent.is-active:hover,
+.btn-white-transparent[aria-pressed="true"]:hover {
+	background: var(--cyan-bright);
 }
 
 .btn-white-transparent:disabled {
