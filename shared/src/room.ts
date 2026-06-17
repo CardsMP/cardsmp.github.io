@@ -115,8 +115,13 @@ export class Room {
 	endRoom(): void {
 		this.status = RoomStatus.LOBBY;
 		this.game.phase = GamePhase.FINISHED;
+		const landlordId = this.game.landlord?.id;
+		const currentPlayerId = this.game.current?.id;
+		const lastPlayPlayerId = this.game.lastPlay
+			? this.game.players[this.game.lastPlay.playerIndex]?.id
+			: undefined;
 
-		for (const player of this.players.values()) {
+		for (const player of [...this.players.values()]) {
 			if (player.status === PlayerStatus.DISCONNECTED) {
 				this.removePlayer(player.id);
 			} else {
@@ -126,5 +131,36 @@ export class Room {
 				player.index = undefined; // Clear game position
 			}
 		}
+
+		const remainingPlayerIds = new Set(this.players.keys());
+		this.game.players = this.game.players.filter((player) =>
+			remainingPlayerIds.has(player.id),
+		);
+		for (const [index, player] of this.game.players.entries())
+			player.index = index;
+
+		this.game.landlordIndex = findGamePlayerIndex(
+			this.game.players,
+			landlordId,
+		);
+		this.game.currentIndex =
+			findGamePlayerIndex(this.game.players, currentPlayerId) ?? 0;
+		if (this.game.lastPlay) {
+			const playerIndex = findGamePlayerIndex(
+				this.game.players,
+				lastPlayPlayerId,
+			);
+			if (playerIndex === undefined) this.game.lastPlay = undefined;
+			else this.game.lastPlay.playerIndex = playerIndex;
+		}
 	}
+}
+
+function findGamePlayerIndex(
+	players: Player[],
+	playerId: string | undefined,
+): number | undefined {
+	if (!playerId) return undefined;
+	const index = players.findIndex((player) => player.id === playerId);
+	return index === -1 ? undefined : index;
 }

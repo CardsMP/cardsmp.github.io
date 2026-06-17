@@ -67,6 +67,7 @@
 	padding: var(--nameplate-padding);
 	pointer-events: none;
 	text-align: center;
+	transition: box-shadow 180ms ease;
 }
 
 .player-nameplate.no-detail {
@@ -112,7 +113,30 @@
 }
 
 .player-nameplate.is-turn {
-	box-shadow: none;
+	animation: nameplate-turn-outline-fade 1.2s ease-in-out infinite alternate;
+	box-shadow:
+		0 0 0 1px rgba(93, 212, 240, 0.75),
+		0 0 10px rgba(93, 212, 240, 0.22);
+}
+
+@keyframes nameplate-turn-outline-fade {
+	from {
+		box-shadow:
+			0 0 0 1px rgba(93, 212, 240, 0.35),
+			0 0 4px rgba(93, 212, 240, 0.12);
+	}
+
+	to {
+		box-shadow:
+			0 0 0 1px rgba(93, 212, 240, 0.95),
+			0 0 12px rgba(93, 212, 240, 0.32);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.player-nameplate.is-turn {
+		animation: none;
+	}
 }
 
 .nameplate-name {

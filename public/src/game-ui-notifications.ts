@@ -1,8 +1,5 @@
 import { GamePhase } from "@shared/game";
-import {
-	applyCardRowLayout,
-	createTableCardImage,
-} from "./game-ui-cards";
+import { applyCardRowLayout, createTableCardImage } from "./game-ui-cards";
 import { escapeHtml, formatPlayType } from "./game-ui-utils";
 import { gs } from "./session";
 
@@ -90,7 +87,7 @@ export function renderTableMessage(): void {
 		);
 	} else if (game.phase === GamePhase.FINISHED) {
 		msg.classList.remove("is-empty");
-		msg.textContent = "Round over. Anyone can reset the round.";
+		msg.textContent = "Waiting to start next round...";
 	} else {
 		msg.classList.add("is-empty");
 		msg.replaceChildren();
