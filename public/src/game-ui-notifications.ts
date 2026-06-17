@@ -75,8 +75,8 @@ export function renderTableMessage(): void {
 
 		const cards = document.createElement("div");
 		cards.className = "table-played-cards";
-		for (const card of game.lastPlay.cards)
-			cards.append(createTableCardImage(card));
+		for (const [index, card] of game.lastPlay.cards.entries())
+			cards.append(createTableCardImage(card, index));
 
 		const footer = document.createElement("div");
 		footer.className = "table-play-type";

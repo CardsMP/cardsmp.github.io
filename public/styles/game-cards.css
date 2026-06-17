@@ -28,6 +28,10 @@
 	object-fit: cover;
 }
 
+.table-card-img.is-card-motion-target {
+	visibility: hidden;
+}
+
 .table-play-type {
 	align-self: flex-end;
 	color: var(--text-secondary);
@@ -76,6 +80,11 @@
 	overflow: visible;
 }
 
+.hand-card.is-card-relocating {
+	transition: none;
+	will-change: transform;
+}
+
 .hand-card:hover {
 	transform: translateY(calc(var(--hover-card-lift) * -1));
 }
@@ -95,4 +104,22 @@
 	height: 100%;
 	object-fit: contain;
 	pointer-events: none;
+}
+
+.card-flight-clone {
+	display: block;
+	position: fixed;
+	transform-origin: top left;
+	z-index: 80;
+	border-radius: clamp(4px, calc(var(--card-width) * 0.0588), 8px);
+	object-fit: contain;
+	pointer-events: none;
+	will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hand-card,
+	.game-card {
+		transition: none;
+	}
 }

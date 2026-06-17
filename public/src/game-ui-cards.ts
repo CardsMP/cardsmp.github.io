@@ -137,14 +137,23 @@ export function getOwnHandArea(): HTMLElement {
 	return hand;
 }
 
-export function createOpponentHand(cardCount: number): HTMLElement {
+export function createOpponentHand(
+	cardCount: number,
+	ownerId?: string,
+): HTMLElement {
 	const hand = document.createElement("div");
 	hand.className = "opponent-hand";
 	hand.setAttribute("aria-label", `${cardCount} face-down cards`);
+	if (ownerId) hand.dataset.cardOwnerId = ownerId;
 
 	for (let index = 0; index < cardCount; index++) {
 		const card = document.createElement("div");
 		card.className = "hand-card";
+		if (ownerId) {
+			card.dataset.cardOwnerId = ownerId;
+			card.dataset.cardIndex = String(index);
+			card.dataset.cardMotionKey = `${ownerId}:back:${index}`;
+		}
 
 		const img = document.createElement("img");
 		img.className = "hand-card-face";
@@ -194,6 +203,9 @@ export function renderCardHand(onSelectionChanged?: () => void): void {
 		const cardKey = getCardKey(card);
 		el.className = "hand-card";
 		el.setAttribute("aria-label", cardToString(card));
+		el.dataset.cardKey = cardKey;
+		el.dataset.cardOwnerId = gs.player.id;
+		el.dataset.cardMotionKey = `${gs.player.id}:${cardKey}`;
 
 		if (selectedCardKeys.has(cardKey)) el.classList.add("selected");
 
@@ -222,11 +234,16 @@ export function renderCardHand(onSelectionChanged?: () => void): void {
 	applyCardRowLayout(handArea, handArea.childElementCount);
 }
 
-export function createTableCardImage(card: Card): HTMLImageElement {
+export function createTableCardImage(
+	card: Card,
+	index?: number,
+): HTMLImageElement {
 	const img = document.createElement("img");
 	img.className = "table-card-img";
 	img.src = getCardImagePath(card);
 	img.alt = cardToString(card);
 	img.draggable = false;
+	img.dataset.cardKey = getCardKey(card);
+	if (index !== undefined) img.dataset.cardIndex = String(index);
 	return img;
 }

@@ -9,6 +9,11 @@ import {
 	renderCardHand,
 } from "./game-ui-cards";
 import {
+	captureCardMotionSnapshot,
+	resetCardMotionHistory,
+	runCardMotion,
+} from "./game-ui-motion";
+import {
 	renderTableMessage,
 	renderTurnBanner,
 } from "./game-ui-notifications";
@@ -40,6 +45,8 @@ export function updateUIPlayerList(): void {
 export function updateUIGame(): void {
 	if (!gs.room || !gs.player) return;
 
+	const cardMotion = captureCardMotionSnapshot();
+
 	updateUIPlayerList();
 	preloadVisibleCardImages();
 	renderNameplates();
@@ -49,6 +56,7 @@ export function updateUIGame(): void {
 	renderTableMessage();
 	renderGameInfoUI();
 	runReadyPreMove();
+	runCardMotion(cardMotion);
 }
 
 export function startGameUI(): void {
@@ -66,6 +74,7 @@ export function endGameUI(): void {
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
 	setPreMoveEnabled(false);
+	resetCardMotionHistory();
 
 	for (const el of document.querySelectorAll(".player-seat")) el.remove();
 

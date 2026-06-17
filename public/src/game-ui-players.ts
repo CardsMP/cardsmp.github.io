@@ -80,7 +80,7 @@ export function renderNameplates(): void {
 			`;
 
 			if (rel !== 0 && isInCurrentRound && cardCount > 0)
-				opponentHand = createOpponentHand(cardCount);
+				opponentHand = createOpponentHand(cardCount, player.id);
 			else if (rel === 0 && isInCurrentRound) ownHand = getOwnHandArea();
 		} else {
 			plate.innerHTML = "";
