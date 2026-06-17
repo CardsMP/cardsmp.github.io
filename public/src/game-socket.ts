@@ -3,16 +3,16 @@ import type { SerializedGame } from "@shared/game";
 import { Game, GamePhase } from "@shared/game";
 import { Player, type PlayerStatus } from "@shared/player";
 import { Room, RoomStatus, type SerializedRoom } from "@shared/room";
+import { updateUIAllChat, updateUIPushChat } from "./game-ui-chat";
+import { gs } from "./session";
 import {
 	endGameUI,
+	preloadCardImages,
 	showRoomElements,
 	startGameUI,
 	updateUIGame,
 	updateUIPlayerList,
-} from "./game-ui-render";
-import { updateUIAllChat, updateUIPushChat } from "./game-ui-chat";
-import { gs } from "./session";
-import { preloadCardImages } from "./game-ui-utils";
+} from "./game-ui-utils";
 import { updateURL } from "./url";
 
 export function initGameSocket(): void {

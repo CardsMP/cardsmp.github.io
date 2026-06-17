@@ -1,6 +1,18 @@
 import type { ChatMessage } from "@shared/chat";
 import { gs } from "./session";
 
+export function initChatControls(): void {
+	const chatInput = document.querySelector("#chat-input") as HTMLInputElement;
+	chatInput?.addEventListener("keydown", (e: Event) => {
+		const ke = e as KeyboardEvent;
+		e.stopPropagation();
+		if (ke.key === "Enter") {
+			ke.preventDefault();
+			sendChatMessage(chatInput);
+		}
+	});
+}
+
 export function updateUIAllChat(): void {
 	const panel = document.querySelector("#chat-messages");
 	if (!panel) return;
@@ -28,7 +40,8 @@ export function updateUIPushChat(message: ChatMessage): void {
 
 export function sendChatMessage(sourceInput?: HTMLInputElement): void {
 	const input =
-		sourceInput ?? (document.querySelector("#chat-input") as HTMLInputElement);
+		sourceInput ??
+		(document.querySelector("#chat-input") as HTMLInputElement);
 
 	const message = input?.value?.trim();
 	if (message && message.length > 0) {
@@ -76,7 +89,10 @@ function createChatGroupElement(messages: ChatMessage[]): HTMLDivElement {
 	return group;
 }
 
-function appendChatMessageToGroup(group: HTMLElement, message: ChatMessage): void {
+function appendChatMessageToGroup(
+	group: HTMLElement,
+	message: ChatMessage,
+): void {
 	const body = group.querySelector(".chat-message-body");
 	if (!body) return;
 
@@ -87,7 +103,8 @@ function appendChatMessageToGroup(group: HTMLElement, message: ChatMessage): voi
 }
 
 function getChatSenderName(id: string): string {
-	if (id === gs.player.id) return gs.room.players.get(id)?.name ?? gs.player.name ?? "Unknown";
+	if (id === gs.player.id)
+		return gs.room.players.get(id)?.name ?? gs.player.name ?? "Unknown";
 	if (id === "server") return "Game";
 	return gs.room.players.get(id)?.name ?? "Unknown";
 }

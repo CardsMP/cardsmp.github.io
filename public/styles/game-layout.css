@@ -38,6 +38,8 @@
 
 	--empty-seat-size: 5cqh;
 
+	--action-button-gap: 1cqh;
+
 	gap: var(--game-area-gap);
 	padding: var(--game-area-gap) 0;
 	width: 100%;
@@ -52,7 +54,7 @@
 	flex: 0 0 var(--game-control-height);
 	justify-content: center;
 	align-items: center;
-	gap: var(--game-area-gap);
+	gap: var(--action-button-gap);
 	width: 100%;
 	height: var(--game-control-height);
 }

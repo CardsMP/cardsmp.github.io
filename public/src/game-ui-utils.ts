@@ -1,8 +1,67 @@
 import { JOKER_RANK, TWO_RANK, type Card } from "@shared/card";
 import { getAssetPath } from "./app-paths";
+import {
+	renderActionButtons,
+	runReadyPreMove,
+} from "./game-ui-actions";
+import {
+	preloadVisibleCardImages,
+	renderCardHand,
+} from "./game-ui-cards";
+import {
+	renderTableMessage,
+	renderTurnBanner,
+} from "./game-ui-notifications";
+import { renderNameplates, renderPlayerList } from "./game-ui-players";
+import {
+	renderGameInfoUI,
+	updateSidebarRoomCode,
+} from "./game-ui-sidebar";
 import { selectedCardKeys, setPreMoveEnabled } from "./game-ui-state";
+import { gs } from "./session";
 
 const preloadedImages = new Set<string>();
+
+export function showRoomElements(): void {
+	for (const screen of document.querySelectorAll(".screen"))
+		screen.classList.add("hidden");
+
+	const gameScreen = document.querySelector("#game") as HTMLDivElement;
+	gameScreen.classList.remove("hidden");
+
+	updateSidebarRoomCode();
+	clearGameArea();
+}
+
+export function updateUIPlayerList(): void {
+	renderPlayerList();
+}
+
+export function updateUIGame(): void {
+	if (!gs.room || !gs.player) return;
+
+	updateUIPlayerList();
+	preloadVisibleCardImages();
+	renderNameplates();
+	renderCardHand(renderActionButtons);
+	renderActionButtons();
+	renderTurnBanner();
+	renderTableMessage();
+	renderGameInfoUI();
+	runReadyPreMove();
+}
+
+export function startGameUI(): void {
+	selectedCardKeys.clear();
+	setPreMoveEnabled(false);
+	updateUIGame();
+}
+
+export function endGameUI(): void {
+	selectedCardKeys.clear();
+	setPreMoveEnabled(false);
+	updateUIGame();
+}
 
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
