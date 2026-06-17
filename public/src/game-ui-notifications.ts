@@ -1,5 +1,6 @@
 import { GamePhase } from "@shared/game";
 import { applyCardRowLayout, createTableCardImage } from "./game-ui-cards";
+import { getLocalGamePlayerIndex } from "./game-ui-local-player";
 import { escapeHtml, formatPlayType } from "./game-ui-utils";
 import { gs } from "./session";
 
@@ -19,7 +20,7 @@ export function renderTurnBanner(): void {
 	}
 
 	const currentName = game.players[game.currentIndex]?.name || "Unknown";
-	const isYou = game.currentIndex === gs.player.index;
+	const isYou = game.currentIndex === getLocalGamePlayerIndex();
 
 	if (game.phase === "bidding") {
 		banner.textContent = isYou
@@ -59,7 +60,11 @@ export function renderTableMessage(): void {
 	if (game.phase === "bidding") {
 		msg.classList.remove("is-empty");
 		msg.textContent = "Betting round, winner takes the bottom.";
-	} else if (game.phase === "playing" && game.lastPlay) {
+	} else if (
+		(game.phase === GamePhase.PLAYING ||
+			game.phase === GamePhase.FINISHED) &&
+		game.lastPlay
+	) {
 		msg.classList.remove("is-empty");
 		const playerName =
 			game.players[game.lastPlay.playerIndex]?.name || "Unknown";

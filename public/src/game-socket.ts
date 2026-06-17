@@ -13,6 +13,7 @@ import {
 	updateUIGame,
 	updateUIPlayerList,
 } from "./game-ui-utils";
+import { getLocalGamePlayer } from "./game-ui-local-player";
 import { updateURL } from "./url";
 
 export function initGameSocket(): void {
@@ -26,8 +27,8 @@ export function initGameSocket(): void {
 
 		gs.room = room;
 		gs.player = room.players.get(gs.player.id) ?? gs.player;
-		if (gs.room.game && gs.player.index !== undefined) {
-			const currentPlayer = gs.room.game.players[gs.player.index];
+		if (gs.room.game) {
+			const currentPlayer = getLocalGamePlayer();
 			if (currentPlayer) preloadCardImages(currentPlayer.hand.cards);
 			if (gs.room.game.lastPlay?.cards?.length) {
 				preloadCardImages(gs.room.game.lastPlay.cards);
@@ -66,8 +67,8 @@ export function initGameSocket(): void {
 			gs.room.game.players.find((p) => p.id === gs.player.id) ??
 			gs.player;
 		syncRoomPlayersFromGame();
-		if (gs.player.index !== undefined) {
-			const currentPlayer = gs.room.game.players[gs.player.index];
+		if (gs.room.game) {
+			const currentPlayer = getLocalGamePlayer();
 			if (currentPlayer) preloadCardImages(currentPlayer.hand.cards);
 		}
 

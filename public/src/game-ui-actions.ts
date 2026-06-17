@@ -2,6 +2,10 @@ import type { Card } from "@shared/card";
 import { GamePhase } from "@shared/game";
 import { MAX_ROOM_PLAYERS } from "@shared/room";
 import { renderCardHand } from "./game-ui-cards";
+import {
+	getLocalGamePlayer,
+	getLocalGamePlayerIndex,
+} from "./game-ui-local-player";
 import { gs } from "./session";
 import {
 	getCardKey,
@@ -13,23 +17,25 @@ import {
 import { makeBtn } from "./game-ui-utils";
 
 export function isPlayersTurn(): boolean {
-	return gs.player?.index === gs.room?.game?.currentIndex;
+	const playerIndex = getLocalGamePlayerIndex();
+	return (
+		playerIndex !== undefined && playerIndex === gs.room?.game?.currentIndex
+	);
 }
 
 export function canPass(): boolean {
 	const game = gs.room?.game;
+	const playerIndex = getLocalGamePlayerIndex();
 	return (
 		game?.phase === GamePhase.PLAYING &&
+		playerIndex !== undefined &&
 		!!game.lastPlay &&
-		game.lastPlay.playerIndex !== gs.player?.index
+		game.lastPlay.playerIndex !== playerIndex
 	);
 }
 
 export function getSelectedCardObjects(): Card[] {
-	const playerIndex = gs.player?.index;
-	if (playerIndex === undefined) return [];
-
-	const myPlayer = gs.room?.game?.players[playerIndex];
+	const myPlayer = getLocalGamePlayer();
 	if (!myPlayer) return [];
 
 	return myPlayer.hand.cards.filter((card) =>
@@ -179,7 +185,5 @@ function createPreMoveButton(): HTMLButtonElement {
 }
 
 function isCurrentPlayerInRound(): boolean {
-	return !!gs.room?.game.players.some(
-		(gamePlayer) => gamePlayer.id === gs.player.id,
-	);
+	return !!getLocalGamePlayer();
 }

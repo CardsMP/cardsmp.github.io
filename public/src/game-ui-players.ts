@@ -4,6 +4,7 @@ import {
 	createOpponentHand,
 	getOwnHandArea,
 } from "./game-ui-cards";
+import { getLocalGamePlayerIndex } from "./game-ui-local-player";
 import { escapeHtml } from "./game-ui-utils";
 import { gs } from "./session";
 
@@ -112,7 +113,7 @@ function getSeatedPlayers(): Player[] {
 	if (!gs.room || !gs.player) return [];
 
 	const gamePlayers = gs.room.game.players;
-	const myGameIndex = gs.player.index;
+	const myGameIndex = getLocalGamePlayerIndex();
 	if (gamePlayers.length > 0 && myGameIndex !== undefined) {
 		return [...gamePlayers].sort((a, b) => {
 			const aRel =

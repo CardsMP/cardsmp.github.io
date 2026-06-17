@@ -1,5 +1,6 @@
 import { cardToString, type Card } from "@shared/card";
 import { getAssetPath } from "./app-paths";
+import { getLocalGamePlayer } from "./game-ui-local-player";
 import { getCardKey, selectedCardKeys } from "./game-ui-state";
 import { getCardImagePath, preloadCardImages } from "./game-ui-utils";
 import { gs } from "./session";
@@ -169,9 +170,9 @@ export function createOpponentHand(
 }
 
 export function preloadVisibleCardImages(): void {
-	if (!gs.room?.game || gs.player.index === undefined) return;
+	if (!gs.room?.game) return;
 
-	const myPlayer = gs.room.game.players[gs.player.index];
+	const myPlayer = getLocalGamePlayer();
 	const cards = myPlayer ? [...myPlayer.hand.cards] : [];
 	if (gs.room.game.lastPlay?.cards?.length) {
 		cards.push(...gs.room.game.lastPlay.cards);
@@ -186,9 +187,9 @@ export function renderCardHand(onSelectionChanged?: () => void): void {
 	handArea.innerHTML = "";
 
 	const game = gs.room?.game;
-	if (!game?.players || gs.player.index === undefined) return;
+	if (!game?.players) return;
 
-	const myPlayer = game.players[gs.player.index];
+	const myPlayer = getLocalGamePlayer();
 	if (!myPlayer) return;
 
 	const currentKeys = new Set(
