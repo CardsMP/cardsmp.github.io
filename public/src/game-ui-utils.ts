@@ -22,7 +22,7 @@ import {
 	renderGameInfoUI,
 	updateSidebarRoomCode,
 } from "./game-ui-sidebar";
-import { selectedCardKeys, setPreMoveEnabled } from "./game-ui-state";
+import { clearPreMoveState, selectedCardKeys } from "./game-ui-state";
 import { gs } from "./session";
 
 const preloadedImages = new Set<string>();
@@ -61,19 +61,19 @@ export function updateUIGame(): void {
 
 export function startGameUI(): void {
 	selectedCardKeys.clear();
-	setPreMoveEnabled(false);
+	clearPreMoveState();
 	updateUIGame();
 }
 
 export function endGameUI(): void {
 	selectedCardKeys.clear();
-	setPreMoveEnabled(false);
+	clearPreMoveState();
 	updateUIGame();
 }
 
 export function clearGameArea(): void {
 	selectedCardKeys.clear();
-	setPreMoveEnabled(false);
+	clearPreMoveState();
 	resetCardMotionHistory();
 
 	for (const el of document.querySelectorAll(".player-seat")) el.remove();

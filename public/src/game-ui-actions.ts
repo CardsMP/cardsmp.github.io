@@ -8,10 +8,12 @@ import {
 } from "./game-ui-local-player";
 import { gs } from "./session";
 import {
+	clearPreMoveState,
 	getCardKey,
+	getPreMoveBet,
 	isPreMoveEnabled,
 	selectedCardKeys,
-	setPreMoveEnabled,
+	setPreMoveBet,
 	togglePreMoveEnabled,
 } from "./game-ui-state";
 import { makeBtn } from "./game-ui-utils";
@@ -51,7 +53,7 @@ export function playSelectedCards(): boolean {
 
 	gs.socket.emit("play-cards", cards);
 	selectedCardKeys.clear();
-	setPreMoveEnabled(false);
+	clearPreMoveState();
 	return true;
 }
 
@@ -60,12 +62,37 @@ export function passTurn(): boolean {
 
 	gs.socket.emit("play-cards", []);
 	selectedCardKeys.clear();
-	setPreMoveEnabled(false);
+	clearPreMoveState();
+	return true;
+}
+
+export function betLandlord(bet: number): boolean {
+	if (!isPlayersTurn() || !canBetLandlord(bet)) return false;
+
+	gs.socket.emit("bet-landlord", bet);
+	clearPreMoveState();
 	return true;
 }
 
 export function tryPreMoveCurrentTurn(): boolean {
-	if (!isPreMoveEnabled() || !isPlayersTurn()) return false;
+	if (!isPlayersTurn()) return false;
+
+	const game = gs.room?.game;
+	if (game?.phase !== GamePhase.BIDDING && getPreMoveBet() !== undefined)
+		setPreMoveBet(undefined);
+
+	if (game?.phase === GamePhase.BIDDING) {
+		const bet = getPreMoveBet();
+		if (bet === undefined) return false;
+		if (!canBetLandlord(bet)) {
+			setPreMoveBet(undefined);
+			return false;
+		}
+
+		return betLandlord(bet);
+	}
+
+	if (!isPreMoveEnabled()) return false;
 	if (getSelectedCardObjects().length === 0) return passTurn();
 
 	return playSelectedCards();
@@ -112,27 +139,12 @@ export function renderActionButtons(): void {
 
 		case GamePhase.BIDDING: {
 			const currentBet = game.bet ?? 0;
+			clearInvalidPreMoveBet(currentBet);
 
-			const bid1 = makeBtn("1", "", () =>
-				gs.socket.emit("bet-landlord", 1),
-			);
-			const bid2 = makeBtn("2", "", () =>
-				gs.socket.emit("bet-landlord", 2),
-			);
-			const bid3 = makeBtn("3", "", () =>
-				gs.socket.emit("bet-landlord", 3),
-			);
-			const pass = makeBtn("Pass", "", () =>
-				gs.socket.emit("bet-landlord", 0),
-			);
-
-			if (!isTurn || currentBet >= 1)
-				(bid1 as HTMLButtonElement).disabled = true;
-			if (!isTurn || currentBet >= 2)
-				(bid2 as HTMLButtonElement).disabled = true;
-			if (!isTurn || currentBet >= 3)
-				(bid3 as HTMLButtonElement).disabled = true;
-			if (!isTurn) (pass as HTMLButtonElement).disabled = true;
+			const bid1 = createBetButton(1, currentBet, isTurn);
+			const bid2 = createBetButton(2, currentBet, isTurn);
+			const bid3 = createBetButton(3, currentBet, isTurn);
+			const pass = createBetButton(0, currentBet, isTurn);
 
 			container.append(bid1, bid2, bid3, pass);
 			break;
@@ -182,6 +194,59 @@ function createPreMoveButton(): HTMLButtonElement {
 	preMoveBtn.classList.toggle("is-active", enabled);
 	preMoveBtn.setAttribute("aria-pressed", String(enabled));
 	return preMoveBtn;
+}
+
+function createBetButton(
+	bet: number,
+	currentBet: number,
+	isTurn: boolean,
+): HTMLButtonElement {
+	const label = getBetButtonLabel(bet, isTurn);
+	const preMoveClass = isTurn ? "" : "btn-preplay";
+	const betBtn = makeBtn(label, preMoveClass, () => {
+		if (isTurn) {
+			betLandlord(bet);
+			return;
+		}
+
+		togglePreMoveBet(bet);
+		renderActionButtons();
+	});
+
+	betBtn.disabled = !isBetOptionAvailable(bet, currentBet);
+
+	if (!isTurn) {
+		const enabled = getPreMoveBet() === bet;
+		betBtn.classList.toggle("is-active", enabled);
+		betBtn.setAttribute("aria-pressed", String(enabled));
+	}
+
+	return betBtn;
+}
+
+function getBetButtonLabel(bet: number, isTurn: boolean): string {
+	if (bet === 0) return isTurn ? "Pass" : "Pre-pass";
+	return isTurn ? String(bet) : `Pre-${bet}`;
+}
+
+function togglePreMoveBet(bet: number): void {
+	setPreMoveBet(getPreMoveBet() === bet ? undefined : bet);
+}
+
+function clearInvalidPreMoveBet(currentBet: number): void {
+	const bet = getPreMoveBet();
+	if (bet !== undefined && !isBetOptionAvailable(bet, currentBet))
+		setPreMoveBet(undefined);
+}
+
+function canBetLandlord(bet: number): boolean {
+	const game = gs.room?.game;
+	if (game?.phase !== GamePhase.BIDDING) return false;
+	return isBetOptionAvailable(bet, game.bet ?? 0);
+}
+
+function isBetOptionAvailable(bet: number, currentBet: number): boolean {
+	return bet === 0 || bet > currentBet;
 }
 
 function isCurrentPlayerInRound(): boolean {
