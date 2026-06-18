@@ -41,11 +41,19 @@ export function renderNameplates(): void {
 
 	const gameTable = document.querySelector("#field-area") as HTMLElement;
 	const seatedPlayers = getSeatedPlayers();
+	const clockwiseSeatCount = getClockwiseSeatCount(seatedPlayers.length);
 
 	for (let rel = 0; rel < 4; rel++) {
 		const player = seatedPlayers[rel];
 		const seatEl = document.createElement("div");
-		seatEl.className = `player-seat ${getNameplatePositionClass(rel)}${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
+		seatEl.className = [
+			"player-seat",
+			getNameplatePositionClass(rel, clockwiseSeatCount),
+			rel === 0 ? "is-own" : "",
+			player ? "" : "is-empty",
+		]
+			.filter(Boolean)
+			.join(" ");
 
 		const plate = document.createElement("div");
 		plate.className = `player-nameplate${rel === 0 ? " is-own" : ""}${player ? "" : " is-empty"}`;
@@ -150,9 +158,24 @@ function getSortedRoomPlayers(): Player[] {
 	});
 }
 
-function getNameplatePositionClass(relativeIndex: number): string {
+function getClockwiseSeatCount(seatedPlayerCount: number): number {
+	const gamePlayers = gs.room?.game.players ?? [];
+	if (gamePlayers.length >= 3 && getLocalGamePlayerIndex() !== undefined)
+		return gamePlayers.length;
+
+	return seatedPlayerCount;
+}
+
+function getNameplatePositionClass(
+	relativeIndex: number,
+	clockwiseSeatCount: number,
+): string {
 	if (relativeIndex === 0) return "nameplate-own";
-	if (relativeIndex === 1) return "nameplate-right";
-	if (relativeIndex === 2) return "nameplate-left";
-	return "nameplate-top";
+	if (relativeIndex === 1) return "nameplate-left";
+	if (clockwiseSeatCount === 3) {
+		if (relativeIndex === 2) return "nameplate-right";
+		return "nameplate-top";
+	}
+	if (relativeIndex === 2) return "nameplate-top";
+	return "nameplate-right";
 }

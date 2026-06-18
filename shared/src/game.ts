@@ -21,6 +21,14 @@ export interface SerializedGame {
 	landlordIndex: number | undefined;
 }
 
+export type BetChangeReason = "bomb" | "rocket" | "spring" | "anti-spring";
+
+export interface BetChange {
+	bet: number;
+	multiplier: number;
+	reason: BetChangeReason;
+}
+
 export class Game {
 	bottom: Card[] = [];
 	players: Player[] = [];
@@ -29,6 +37,10 @@ export class Game {
 	bet: number = 0;
 	landlordIndex: number | undefined = undefined;
 	lastPlay: Play | undefined = undefined;
+	private farmerHasPlayed = false;
+	private landlordHasPlayed = false;
+	private landlordHasPlayedAgain = false;
+	private lastBetChange: BetChange | undefined = undefined;
 	phase: GamePhase = GamePhase.FINISHED;
 
 	constructor() {}
@@ -88,6 +100,8 @@ export class Game {
 		this.bet = 0;
 		this.landlordIndex = undefined;
 		this.lastPlay = undefined;
+		this.lastBetChange = undefined;
+		this.resetSpringState();
 	}
 
 	// Server Only
@@ -202,6 +216,8 @@ export class Game {
 	}
 
 	playCards(cards: Card[], check = true): boolean | undefined {
+		this.lastBetChange = undefined;
+
 		if (this.phase !== GamePhase.PLAYING) return undefined;
 
 		const player = this.players[this.currentIndex];
@@ -217,12 +233,15 @@ export class Game {
 				if (player.hand.cards.length > 0)
 					player.hand.remove(cards, false);
 				player.handCount = Math.max(0, player.handCount - cards.length);
-				this.lastPlay = {
+				const play = {
 					cards,
 					type: playType?.type ?? PlayType.SOLO,
 					value: playType?.value ?? 0,
 					playerIndex: this.currentIndex,
 				};
+				this.lastPlay = play;
+				this.recordSpringPlay(this.currentIndex);
+				this.applyPlayBetMultiplier(play);
 				if (player.handCount === 0) {
 					this.phase = GamePhase.FINISHED;
 					return true;
@@ -256,12 +275,8 @@ export class Game {
 			if (!player.hand.remove(cards, check)) return undefined;
 			player.handCount = player.hand.cards.length;
 			this.lastPlay = play;
-
-			if (play.type === PlayType.BOMB || play.type === PlayType.ROCKET) {
-				this.bet *= 2;
-			} else if (play.type === PlayType.BIG_ROCKET) {
-				this.bet *= 4;
-			}
+			this.recordSpringPlay(this.currentIndex);
+			this.applyPlayBetMultiplier(play);
 
 			if (player.handCount === 0) {
 				this.phase = GamePhase.FINISHED;
@@ -293,7 +308,7 @@ export class Game {
 			sorted.length === 4 &&
 			sorted.every((c) => c.rank === JOKER_RANK)
 		) {
-			return { type: PlayType.BIG_ROCKET, value: 1001 };
+			return { type: PlayType.ROCKET, value: 1000 };
 		}
 
 		// 3-player rocket: one black joker + one red joker
@@ -332,13 +347,18 @@ export class Game {
 			return { type: PlayType.SOLO, value: Hand.getCardValue(sorted[0]) };
 		}
 
-		// Pair (including matched joker pairs in 4-player)
-		if (sorted.length === 2 && counts.length === 1 && counts[0] === 2) {
+		// Pair (including same-color joker pairs in 4-player)
+		if (sorted.length === 2 && Game.cardsFormPair(sorted)) {
 			return { type: PlayType.PAIR, value: Hand.getCardValue(sorted[0]) };
 		}
 
 		// Triple
-		if (sorted.length === 3 && counts.length === 1 && counts[0] === 3) {
+		if (
+			sorted.length === 3 &&
+			counts.length === 1 &&
+			counts[0] === 3 &&
+			sorted[0].rank !== JOKER_RANK
+		) {
 			return {
 				type: PlayType.TRIPLE,
 				value: Hand.getCardValue(sorted[0]),
@@ -354,6 +374,8 @@ export class Game {
 			counts.includes(1)
 		) {
 			const tripleRank = uniqueRanks.find((r) => rankCounts[r] === 3)!;
+			if (tripleRank === JOKER_RANK) return undefined;
+
 			return {
 				type: PlayType.TRIPLE_WITH_SINGLE,
 				value: Hand.getCardValue(
@@ -370,6 +392,11 @@ export class Game {
 			counts.includes(2)
 		) {
 			const tripleRank = uniqueRanks.find((r) => rankCounts[r] === 3)!;
+			if (tripleRank === JOKER_RANK) return undefined;
+
+			const pairCards = sorted.filter((c) => c.rank !== tripleRank);
+			if (!Game.cardsFormPair(pairCards)) return undefined;
+
 			return {
 				type: PlayType.TRIPLE_WITH_PAIR,
 				value: Hand.getCardValue(
@@ -404,6 +431,10 @@ export class Game {
 			counts.filter((c) => c === 2).length === 2
 		) {
 			const quadRank = uniqueRanks.find((r) => rankCounts[r] === 4)!;
+			const pairCards = sorted.filter((c) => c.rank !== quadRank);
+			const pairRanks = Game.getPairRanks(pairCards);
+			if (!pairRanks || pairRanks.length !== 2) return undefined;
+
 			return {
 				type: PlayType.QUAD_WITH_PAIRS,
 				value: Hand.getCardValue(
@@ -464,6 +495,27 @@ export class Game {
 		return counts;
 	}
 
+	private static cardsFormPair(cards: Card[]): boolean {
+		if (cards.length !== 2) return false;
+		if (cards[0].rank !== cards[1].rank) return false;
+		if (cards[0].rank === JOKER_RANK)
+			return cards[0].suit === cards[1].suit;
+
+		return true;
+	}
+
+	private static getPairRanks(cards: Card[]): number[] | undefined {
+		const rankCounts = Game.countRanks(cards);
+		const pairRanks = Object.keys(rankCounts).map(Number);
+
+		for (const rank of pairRanks) {
+			const rankCards = cards.filter((card) => card.rank === rank);
+			if (!Game.cardsFormPair(rankCards)) return undefined;
+		}
+
+		return pairRanks;
+	}
+
 	// Cards are sorted ascending, so each successive group must be exactly 1 higher in value.
 	private static isStraight(sorted: Card[], groupSize: number): number {
 		if (sorted.length % groupSize !== 0) return 0;
@@ -504,8 +556,8 @@ export class Game {
 	}
 
 	// Airplane: 2+ consecutive triples with attached singles (3-player only) or pairs.
-	// The triple ranks must form a consecutive sequence. The remaining cards must all be
-	// singles (one per triple, all different ranks) or all pairs (one pair per triple, all different ranks).
+	// The triple ranks must form a consecutive sequence. The remaining cards must be
+	// singles (one per triple) or pairs (one pair per triple, all different ranks).
 	static validateAirplane(
 		cards: Card[],
 		rankCounts: Record<number, number>,
@@ -531,10 +583,12 @@ export class Game {
 
 		if (attachmentCards.length === 0) return undefined;
 
-		// Attached singles (excluded in 4-player): one card per triple, all different ranks
+		// Attached singles (excluded in 4-player): one card per triple; one pair is allowed.
 		if (!doubleDeck && attachmentCards.length === numTriples) {
-			const attachmentRanks = attachmentCards.map((c) => c.rank);
-			if (new Set(attachmentRanks).size !== numTriples) return undefined;
+			const attachmentCounts = Game.countRanks(attachmentCards);
+			if (Object.values(attachmentCounts).some((count) => count > 2))
+				return undefined;
+			if ((attachmentCounts[JOKER_RANK] ?? 0) > 1) return undefined;
 
 			return {
 				type: PlayType.AIRPLANE,
@@ -544,13 +598,8 @@ export class Game {
 
 		// Attached pairs: one pair per triple, all different ranks
 		if (attachmentCards.length === numTriples * 2) {
-			const attachmentCounts = Game.countRanks(attachmentCards);
-			const allPairs = Object.values(attachmentCounts).every(
-				(c) => c === 2,
-			);
-			if (!allPairs) return undefined;
-			if (Object.keys(attachmentCounts).length !== numTriples)
-				return undefined;
+			const pairRanks = Game.getPairRanks(attachmentCards);
+			if (!pairRanks || pairRanks.length !== numTriples) return undefined;
 
 			return {
 				type: PlayType.AIRPLANE,
@@ -561,20 +610,80 @@ export class Game {
 		return undefined;
 	}
 
-	static canBeat(play: Play, lastPlay: Play): boolean {
-		if (play.type === PlayType.BIG_ROCKET) return true;
+	getLastBetChange(): BetChange | undefined {
+		return this.lastBetChange;
+	}
 
+	static getPlayScoreMultiplier(play: Play, doubleDeck = false): number {
+		if (play.type === PlayType.ROCKET) return 2;
+		if (play.type !== PlayType.BOMB) return 1;
+		if (!doubleDeck) return 2;
+
+		return play.cards.length >= 6 ? 2 : 1;
+	}
+
+	applySpringMultiplier(landlordWon: boolean): BetChange | undefined {
+		const multiplier = this.getSpringMultiplier(landlordWon);
+		const reason = landlordWon ? "spring" : "anti-spring";
+		return this.applyBetMultiplier(multiplier, reason);
+	}
+
+	getSpringMultiplier(landlordWon: boolean): number {
+		if (this.landlordIndex === undefined) return 1;
+
+		if (landlordWon && !this.farmerHasPlayed) return 2;
+		if (!landlordWon && !this.landlordHasPlayedAgain) return 2;
+
+		return 1;
+	}
+
+	private applyPlayBetMultiplier(play: Play): BetChange | undefined {
+		const multiplier = Game.getPlayScoreMultiplier(play, this.isDoubleDeck);
+		const reason = play.type === PlayType.ROCKET ? "rocket" : "bomb";
+		return this.applyBetMultiplier(multiplier, reason);
+	}
+
+	private applyBetMultiplier(
+		multiplier: number,
+		reason: BetChangeReason,
+	): BetChange | undefined {
+		if (multiplier <= 1) {
+			this.lastBetChange = undefined;
+			return undefined;
+		}
+
+		this.bet *= multiplier;
+		this.lastBetChange = {
+			bet: this.bet,
+			multiplier,
+			reason,
+		};
+		return this.lastBetChange;
+	}
+
+	private resetSpringState(): void {
+		this.farmerHasPlayed = false;
+		this.landlordHasPlayed = false;
+		this.landlordHasPlayedAgain = false;
+	}
+
+	private recordSpringPlay(playerIndex: number): void {
+		if (playerIndex !== this.landlordIndex) {
+			this.farmerHasPlayed = true;
+			return;
+		}
+
+		if (this.landlordHasPlayed) this.landlordHasPlayedAgain = true;
+		else this.landlordHasPlayed = true;
+	}
+
+	static canBeat(play: Play, lastPlay: Play): boolean {
 		if (play.type === PlayType.ROCKET) {
-			if (lastPlay.type === PlayType.BIG_ROCKET) return false;
-			return true;
+			return lastPlay.type !== PlayType.ROCKET;
 		}
 
 		if (play.type === PlayType.BOMB) {
-			if (
-				lastPlay.type === PlayType.ROCKET ||
-				lastPlay.type === PlayType.BIG_ROCKET
-			)
-				return false;
+			if (lastPlay.type === PlayType.ROCKET) return false;
 			if (lastPlay.type === PlayType.BOMB)
 				return play.value > lastPlay.value;
 			return true;
@@ -607,7 +716,6 @@ export enum PlayType {
 	QUAD_WITH_PAIRS = "quad_with_pairs",
 	BOMB = "bomb",
 	ROCKET = "rocket",
-	BIG_ROCKET = "big_rocket",
 }
 
 export interface Play {

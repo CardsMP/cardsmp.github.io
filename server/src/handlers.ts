@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 import { cardToString, type Card } from "@shared/card";
-import { GamePhase, PlayType } from "@shared/game";
+import { GamePhase, type BetChange } from "@shared/game";
 import { PlayerStatus } from "@shared/player";
 import { MAX_ROOM_PLAYERS, Room, RoomStatus } from "@shared/room";
 import type { GameSocket } from "./index";
@@ -164,27 +164,17 @@ export function setupHandlers(socket: GameSocket): void {
 			return;
 		}
 
+		const betChange = socket.room.game.getLastBetChange();
+
 		io.to(socket.room.code).emit("p-played-cards", cards);
 
-		const lastPlay = socket.room.game.lastPlay;
-		if (
-			lastPlay?.type === PlayType.BOMB ||
-			lastPlay?.type === PlayType.ROCKET ||
-			lastPlay?.type === PlayType.BIG_ROCKET
-		) {
-			io.to(socket.room.code).emit(
-				"p-bet-landlord",
-				socket.room.game.bet,
-			);
+		if (betChange) {
+			emitBetChange(socket.room, betChange);
 			const playName =
-				lastPlay.type === PlayType.BIG_ROCKET
-					? "big rocket"
-					: lastPlay.type === PlayType.ROCKET
-						? "rocket"
-						: "bomb";
+				betChange.reason === "rocket" ? "rocket" : "bomb";
 			broadcastSystemChat(
 				socket.room,
-				`${socket.player.name || "A player"} played a ${playName}. Bet is now ${socket.room.game.bet}.`,
+				`${socket.player.name || "A player"} played a ${playName}. Bet is now ${betChange.bet}.`,
 			);
 		}
 
@@ -284,7 +274,20 @@ function broadcastSystemChat(room: Room, message: string): void {
 	io.to(room.code).emit("p-sent-chat", "server", message);
 }
 
+function emitBetChange(room: Room, betChange: BetChange): void {
+	io.to(room.code).emit("p-bet-landlord", betChange.bet);
+}
+
 function applyRoundScore(room: Room, landlordWon: boolean): void {
+	const betChange = room.game.applySpringMultiplier(landlordWon);
+	if (betChange) {
+		emitBetChange(room, betChange);
+		broadcastSystemChat(
+			room,
+			`${landlordWon ? "Spring" : "Anti-spring"} bonus applied. Bet is now ${betChange.bet}.`,
+		);
+	}
+
 	const roundScore = Math.max(1, room.game.bet);
 	const landlordId = room.game.landlord?.id;
 	const activePlayers = room.game.players;
